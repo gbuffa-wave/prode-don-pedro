@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Check, MagnifyingGlass } from "@phosphor-icons/react";
+import { ArrowsClockwise, Check, MagnifyingGlass } from "@phosphor-icons/react";
 
 interface Team {
   id: number;
@@ -34,6 +34,8 @@ export default function AdminMatchesPage() {
   const [saving, setSaving] = useState<Record<number, boolean>>({});
   const [filter, setFilter] = useState<"all" | "pending" | "finished">("all");
   const [search, setSearch] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchMatches() {
@@ -114,6 +116,34 @@ export default function AdminMatchesPage() {
     }
   }
 
+  async function handleSync() {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch("/api/sync-results");
+      const body = await res.json();
+      if (!res.ok) {
+        setSyncResult(`Error: ${body.error}`);
+      } else if (body.message) {
+        setSyncResult(body.message);
+      } else {
+        setSyncResult(`Sincronizado: ${body.updated} partido(s) actualizado(s)`);
+        // Reload matches
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("matches")
+          .select("*,home_team:teams!home_team_id(*),away_team:teams!away_team_id(*)")
+          .order("match_date");
+        if (data) setMatches(data as AdminMatch[]);
+      }
+    } catch (err) {
+      setSyncResult(err instanceof Error ? err.message : "Error al sincronizar");
+    } finally {
+      setSyncing(false);
+      setTimeout(() => setSyncResult(null), 5000);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -132,7 +162,33 @@ export default function AdminMatchesPage() {
 
   return (
     <div>
-      <h2 className="font-sora font-bold text-lg mb-4">Cargar Resultados</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-sora font-bold text-lg">Cargar Resultados</h2>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded bg-teal text-bg hover:bg-teal-dim disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <ArrowsClockwise
+            size={14}
+            weight="bold"
+            className={syncing ? "animate-spin" : ""}
+          />
+          {syncing ? "Sincronizando..." : "Sincronizar resultados"}
+        </button>
+      </div>
+
+      {syncResult && (
+        <div
+          className={`mb-4 px-4 py-2 rounded text-xs font-medium ${
+            syncResult.startsWith("Error")
+              ? "bg-red-500/10 text-red-400 border border-red-500/20"
+              : "bg-teal/10 text-teal border border-teal/20"
+          }`}
+        >
+          {syncResult}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-4">

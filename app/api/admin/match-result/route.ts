@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { calculateMatchScores } from "@/lib/scoring";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,6 +21,9 @@ export async function POST(request: Request) {
   if (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
+
+  // Auto-calculate scores for all predictions on this match
+  await calculateMatchScores(matchId);
 
   return Response.json({ success: true });
 }
