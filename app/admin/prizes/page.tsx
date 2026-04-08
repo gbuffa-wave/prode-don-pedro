@@ -1,16 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash, ImageSquare, Check } from "@phosphor-icons/react";
+import { createClient } from "@/lib/supabase/client";
 import type { Prize } from "@/lib/types";
 
 export default function AdminPrizesPage() {
-  const [prizes, setPrizes] = useState<Prize[]>([
-    { id: 1, position: 1, title: "Viaje a ver la final", description: "Viaje all-inclusive para dos personas.", image_url: null, created_at: "" },
-    { id: 2, position: 2, title: "Camiseta oficial firmada", description: "Camiseta de la seleccion argentina.", image_url: null, created_at: "" },
-    { id: 3, position: 3, title: "Kit Mercedes-Benz", description: "Kit exclusivo de merchandising.", image_url: null, created_at: "" },
-  ]);
+  const [prizes, setPrizes] = useState<Prize[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("prizes")
+      .select("*")
+      .order("position")
+      .then(({ data }) => {
+        if (data) setPrizes(data);
+        setLoading(false);
+      });
+  }, []);
 
   function addPrize() {
     const nextPos = prizes.length + 1;
@@ -25,7 +36,14 @@ export default function AdminPrizesPage() {
     setPrizes((prev) => prev.filter((p) => p.id !== id).map((p, i) => ({ ...p, position: i + 1 })));
   }
 
-  function handleSave() {
+  async function handleSave() {
+    setSaving(true);
+    await fetch("/api/admin/prizes", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prizes }),
+    });
+    setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -36,6 +54,10 @@ export default function AdminPrizesPage() {
     if (pos === 3) return "3er";
     return `${pos}to`;
   };
+
+  if (loading) {
+    return <div className="text-text-muted text-sm">Cargando premios...</div>;
+  }
 
   return (
     <div>
@@ -89,11 +111,12 @@ export default function AdminPrizesPage() {
         </button>
         <button
           onClick={handleSave}
+          disabled={saving}
           className={`px-6 py-2 text-sm font-semibold rounded transition-all ${
             saved ? "bg-success text-bg" : "bg-teal text-bg hover:bg-teal-dim"
-          }`}
+          } disabled:opacity-60`}
         >
-          {saved ? <span className="flex items-center gap-1"><Check size={14} weight="bold" /> Guardado</span> : "Guardar premios"}
+          {saved ? <span className="flex items-center gap-1"><Check size={14} weight="bold" /> Guardado</span> : saving ? "Guardando..." : "Guardar premios"}
         </button>
       </div>
     </div>

@@ -1,18 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check } from "@phosphor-icons/react";
+import { createClient } from "@/lib/supabase/client";
 import type { ScoringRule } from "@/lib/types";
 
-const INITIAL_RULES: ScoringRule[] = [
-  { id: 1, rule_type: "exact", label: "Resultado exacto", points: 10, is_active: true },
-  { id: 2, rule_type: "winner_and_diff", label: "Ganador + diferencia de goles", points: 5, is_active: true },
-  { id: 3, rule_type: "winner_only", label: "Solo ganador", points: 3, is_active: true },
-];
-
 export default function AdminScoringPage() {
-  const [rules, setRules] = useState(INITIAL_RULES);
+  const [rules, setRules] = useState<ScoringRule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("scoring_rules")
+      .select("*")
+      .order("id")
+      .then(({ data }) => {
+        if (data) setRules(data);
+        setLoading(false);
+      });
+  }, []);
 
   function updatePoints(id: number, points: number) {
     setRules((prev) => prev.map((r) => r.id === id ? { ...r, points } : r));
@@ -22,13 +31,24 @@ export default function AdminScoringPage() {
     setRules((prev) => prev.map((r) => r.id === id ? { ...r, is_active: !r.is_active } : r));
   }
 
-  function handleSave() {
+  async function handleSave() {
+    setSaving(true);
+    await fetch("/api/admin/scoring", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rules }),
+    });
+    setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
 
   // Preview: simulate a match
   const activeRules = rules.filter((r) => r.is_active);
+
+  if (loading) {
+    return <div className="text-text-muted text-sm">Cargando reglas...</div>;
+  }
 
   return (
     <div>
@@ -93,11 +113,12 @@ export default function AdminScoringPage() {
 
       <button
         onClick={handleSave}
+        disabled={saving}
         className={`px-6 py-3 text-sm font-semibold rounded transition-all ${
           saved ? "bg-success text-bg" : "bg-teal text-bg hover:bg-teal-dim"
-        }`}
+        } disabled:opacity-60`}
       >
-        {saved ? <span className="flex items-center gap-1"><Check size={14} weight="bold" /> Guardado</span> : "Guardar configuracion"}
+        {saved ? <span className="flex items-center gap-1"><Check size={14} weight="bold" /> Guardado</span> : saving ? "Guardando..." : "Guardar configuracion"}
       </button>
     </div>
   );
