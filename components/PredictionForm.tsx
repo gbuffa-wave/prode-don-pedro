@@ -15,6 +15,7 @@ interface Props {
 export default function PredictionForm({ matchId, existingHome, existingAway, disabled, onSubmit }: Props) {
   const [home, setHome] = useState(existingHome?.toString() ?? "");
   const [away, setAway] = useState(existingAway?.toString() ?? "");
+  const [shake, setShake] = useState(false);
   const { showToast } = useToast();
 
   const hasExisting = existingHome !== undefined;
@@ -31,14 +32,18 @@ export default function PredictionForm({ matchId, existingHome, existingAway, di
   function handleSubmit() {
     const h = parseInt(home);
     const a = parseInt(away);
-    if (isNaN(h) || isNaN(a) || h < 0 || a < 0) return;
+    if (isNaN(h) || isNaN(a) || h < 0 || a < 0) {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
+    }
     onSubmit(matchId, h, a);
     showToast("¡Pronóstico guardado!");
     if (!hasExisting) fireConfetti();
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={`flex items-center gap-2 ${shake ? "shake" : ""}`}>
       <input
         type="number"
         min={0}

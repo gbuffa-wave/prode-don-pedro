@@ -20,12 +20,21 @@ export default function MatchCard({ match, prediction, onPredict }: Props) {
   const isClosed = match.status !== "scheduled" || new Date(match.match_date) <= new Date();
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-4 space-y-3">
+    <div className={`bg-surface border rounded-lg p-4 space-y-3 ${match.status === "in_progress" ? "pulse-live border-success" : "border-border"}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs text-text-muted font-medium uppercase tracking-wider">
           {match.group_label ? `Grupo ${match.group_label}` : match.stage}
         </span>
-        {!isFinished && <CountdownTimer targetDate={match.match_date} />}
+        {match.status === "in_progress" && (
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-success">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
+            </span>
+            EN VIVO
+          </span>
+        )}
+        {match.status === "scheduled" && <CountdownTimer targetDate={match.match_date} />}
         {isFinished && (
           <span className="text-xs font-semibold text-success">Finalizado</span>
         )}
