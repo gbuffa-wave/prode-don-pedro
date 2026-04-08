@@ -1,54 +1,95 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import MatchCard from "@/components/MatchCard";
-import { getFlagUrl } from "@/lib/fixture-data";
+import { Calendar, ListBullets, FunnelSimple, TreeStructure } from "@phosphor-icons/react";
+import BracketView from "@/components/BracketView";
+import { createClient } from "@/lib/supabase/client";
+import type { Match, Team } from "@/lib/types";
 
-const MOCK_MATCHES = [
-  {
-    id: 1, home_team_id: 1, away_team_id: 2,
-    stage: "group", group_label: "A",
-    match_date: new Date(Date.now() + 86400000 * 5).toISOString(),
-    venue: "MetLife Stadium, New Jersey",
-    status: "scheduled" as const, home_score: null, away_score: null,
-    home_team: { name: "Estados Unidos", code: "USA", flag_url: getFlagUrl("USA") },
-    away_team: { name: "Marruecos", code: "MAR", flag_url: getFlagUrl("MAR") },
-  },
-  {
-    id: 2, home_team_id: 5, away_team_id: 6,
-    stage: "group", group_label: "B",
-    match_date: new Date(Date.now() + 86400000 * 6).toISOString(),
-    venue: "Hard Rock Stadium, Miami",
-    status: "scheduled" as const, home_score: null, away_score: null,
-    home_team: { name: "Argentina", code: "ARG", flag_url: getFlagUrl("ARG") },
-    away_team: { name: "Peru", code: "PER", flag_url: getFlagUrl("PER") },
-  },
-  {
-    id: 3, home_team_id: 13, away_team_id: 14,
-    stage: "group", group_label: "D",
-    match_date: new Date(Date.now() - 3600000).toISOString(),
-    venue: "Estadio Azteca, Mexico",
-    status: "finished" as const, home_score: 2, away_score: 0,
-    home_team: { name: "Brasil", code: "BRA", flag_url: getFlagUrl("BRA") },
-    away_team: { name: "Colombia", code: "COL", flag_url: getFlagUrl("COL") },
-  },
-  {
-    id: 4, home_team_id: 21, away_team_id: 22,
-    stage: "group", group_label: "F",
-    match_date: new Date(Date.now() + 86400000 * 2).toISOString(),
-    venue: "AT&T Stadium, Dallas",
-    status: "scheduled" as const, home_score: null, away_score: null,
-    home_team: { name: "Alemania", code: "GER", flag_url: getFlagUrl("GER") },
-    away_team: { name: "Uruguay", code: "URU", flag_url: getFlagUrl("URU") },
-  },
-];
+type MatchWithTeams = Match & {
+  home_team: Team;
+  away_team: Team;
+};
+
+type ViewMode = "today" | "all" | "group" | "bracket";
+
+const GROUPS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const today = new Date();
+  const tomorrow = new Date(Date.now() + 86400000);
+  const yesterday = new Date(Date.now() - 86400000);
+
+  if (d.toDateString() === today.toDateString()) return "Hoy";
+  if (d.toDateString() === tomorrow.toDateString()) return "Mañana";
+  if (d.toDateString() === yesterday.toDateString()) return "Ayer";
+
+  return d.toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" });
+}
+
+function groupByDate(matches: MatchWithTeams[]) {
+  const groups: Record<string, MatchWithTeams[]> = {};
+  for (const match of matches) {
+    const key = new Date(match.match_date).toDateString();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(match);
+  }
+  return Object.entries(groups).sort(
+    ([a], [b]) => new Date(a).getTime() - new Date(b).getTime()
+  );
+}
 
 export default function FixturePage() {
+  const [matches, setMatches] = useState<MatchWithTeams[]>([]);
+  const [loading, setLoading] = useState(true);
   const [predictions, setPredictions] = useState<Record<number, { home_score: number; away_score: number }>>({});
+  const [view, setView] = useState<ViewMode>("today");
+  const [selectedGroup, setSelectedGroup] = useState("A");
+
+  useEffect(() => {
+    async function fetchMatches() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("matches")
+        .select("*, home_team:teams!home_team_id(*), away_team:teams!away_team_id(*)")
+        .order("match_date");
+
+      if (!error && data) {
+        setMatches(data as MatchWithTeams[]);
+      }
+      setLoading(false);
+    }
+    fetchMatches();
+  }, []);
 
   function handlePredict(matchId: number, homeScore: number, awayScore: number) {
     setPredictions((prev) => ({ ...prev, [matchId]: { home_score: homeScore, away_score: awayScore } }));
   }
+
+  const filtered = useMemo(() => {
+    const today = new Date().toDateString();
+
+    switch (view) {
+      case "today":
+        return matches.filter(
+          (m) => new Date(m.match_date).toDateString() === today
+        );
+      case "group":
+        return matches.filter((m) => m.group_label === selectedGroup);
+      case "all":
+      default:
+        return [...matches].sort(
+          (a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+        );
+    }
+  }, [view, selectedGroup, matches]);
+
+  const dateGroups = groupByDate(filtered);
+  const todayCount = matches.filter(
+    (m) => new Date(m.match_date).toDateString() === new Date().toDateString()
+  ).length;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -57,20 +98,125 @@ export default function FixturePage() {
         <p className="text-text-secondary text-sm">Carga tus pronosticos para cada partido.</p>
       </div>
 
-      <div className="space-y-3">
-        {MOCK_MATCHES.map((match) => (
-          <MatchCard
-            key={match.id}
-            match={match}
-            prediction={
-              predictions[match.id]
-                ? { id: "", user_id: "", match_id: match.id, ...predictions[match.id], created_at: "", updated_at: "" }
-                : undefined
-            }
-            onPredict={handlePredict}
-          />
-        ))}
+      {/* View tabs */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setView("today")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+            view === "today"
+              ? "bg-teal border-teal text-bg"
+              : "border-border text-text-secondary hover:border-text-muted hover:text-text-primary"
+          }`}
+        >
+          <Calendar size={14} />
+          Hoy{todayCount > 0 && ` (${todayCount})`}
+        </button>
+        <button
+          onClick={() => setView("all")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+            view === "all"
+              ? "bg-teal border-teal text-bg"
+              : "border-border text-text-secondary hover:border-text-muted hover:text-text-primary"
+          }`}
+        >
+          <ListBullets size={14} />
+          Todos
+        </button>
+        <button
+          onClick={() => setView("group")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+            view === "group"
+              ? "bg-teal border-teal text-bg"
+              : "border-border text-text-secondary hover:border-text-muted hover:text-text-primary"
+          }`}
+        >
+          <FunnelSimple size={14} />
+          Por grupo
+        </button>
+        <button
+          onClick={() => setView("bracket")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+            view === "bracket"
+              ? "bg-teal border-teal text-bg"
+              : "border-border text-text-secondary hover:border-text-muted hover:text-text-primary"
+          }`}
+        >
+          <TreeStructure size={14} />
+          Llaves
+        </button>
       </div>
+
+      {/* Group selector */}
+      {view === "group" && (
+        <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
+          {GROUPS.map((g) => (
+            <button
+              key={g}
+              onClick={() => setSelectedGroup(g)}
+              className={`w-8 h-8 rounded text-xs font-bold transition-colors flex-shrink-0 ${
+                selectedGroup === g
+                  ? "bg-teal text-bg"
+                  : "bg-surface border border-border text-text-muted hover:text-text-primary"
+              }`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Bracket view */}
+      {view === "bracket" && <BracketView />}
+
+      {/* Loading state */}
+      {loading && view !== "bracket" && (
+        <div className="text-center py-12">
+          <p className="text-text-muted text-sm">Cargando partidos...</p>
+        </div>
+      )}
+
+      {/* Matches grouped by date */}
+      {!loading && view !== "bracket" && filtered.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-text-muted text-sm">
+            {view === "today"
+              ? "No hay partidos hoy."
+              : "No hay partidos en este grupo."}
+          </p>
+        </div>
+      ) : !loading && view !== "bracket" ? (
+        <div className="space-y-6">
+          {dateGroups.map(([dateKey, dayMatches]) => (
+            <div key={dateKey}>
+              {/* Date header */}
+              <div className="flex items-center gap-3 mb-3">
+                <span className="font-grotesk font-semibold text-xs text-teal uppercase tracking-wider">
+                  {formatDate(dayMatches[0].match_date)}
+                </span>
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-text-muted">
+                  {dayMatches.length} partido{dayMatches.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {dayMatches.map((match) => (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    prediction={
+                      predictions[match.id]
+                        ? { id: "", user_id: "", match_id: match.id, ...predictions[match.id], created_at: "", updated_at: "" }
+                        : undefined
+                    }
+                    onPredict={handlePredict}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
