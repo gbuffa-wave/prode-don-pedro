@@ -3,6 +3,7 @@
 import { Trophy, Crown } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import type { LeaderboardEntry } from "@/lib/types";
+import UserAvatar from "@/components/UserAvatar";
 
 interface Props {
   entries: LeaderboardEntry[];
@@ -70,11 +71,15 @@ function Podium({ top3, currentUserId }: { top3: LeaderboardEntry[]; currentUser
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: fadeInDelay, duration: 0.35, ease: "backOut" }}
-              className={`w-12 h-12 rounded-full border-2 ${style.border} ${style.bg} flex items-center justify-center mb-2`}
+              className={`w-12 h-12 rounded-full border-2 ${style.border} ${style.bg} flex items-center justify-center mb-2 overflow-hidden`}
             >
-              <span className={`font-sora font-bold text-sm ${style.text}`}>
-                {(entry.display_name || "?")[0].toUpperCase()}
-              </span>
+              {entry.avatar_url ? (
+                <UserAvatar src={entry.avatar_url} name={entry.display_name} size={44} />
+              ) : (
+                <span className={`font-sora font-bold text-sm ${style.text}`}>
+                  {(entry.display_name || "?")[0].toUpperCase()}
+                </span>
+              )}
             </motion.div>
 
             {/* Name */}
@@ -169,7 +174,8 @@ function TableRow({ entry, currentUserId }: { entry: LeaderboardEntry; currentUs
       <span className="font-sora font-bold text-sm text-text-secondary">
         {entry.rank}
       </span>
-      <span className={`font-grotesk text-sm truncate ${isMe ? "text-teal font-semibold" : "text-text-primary"}`}>
+      <span className={`font-grotesk text-sm truncate flex items-center gap-1.5 ${isMe ? "text-teal font-semibold" : "text-text-primary"}`}>
+        <UserAvatar src={entry.avatar_url} name={entry.display_name} size={20} />
         {entry.display_name || `Jugador ${entry.user_id.slice(0, 6)}`}
         {isMe && <span className="text-xs text-teal ml-1">(vos)</span>}
       </span>

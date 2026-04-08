@@ -54,6 +54,7 @@ export interface Score {
 export interface LeaderboardEntry {
   user_id: string;
   display_name: string | null;
+  avatar_url: string | null;
   total_points: number;
   rank: number;
   correct_exact: number;
@@ -79,5 +80,6 @@ export interface AppUser {
   id: string;
   role: UserRole;
   display_name: string | null;
+  avatar_url: string | null;
   created_at: string;
 }
