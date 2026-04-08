@@ -1,50 +1,133 @@
 "use client";
 
-import { useState } from "react";
-import { getFlagUrl } from "@/lib/fixture-data";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Check, MagnifyingGlass } from "@phosphor-icons/react";
+
+interface Team {
+  id: number;
+  name: string;
+  code: string;
+  flag_url: string;
+  group_letter: string;
+}
 
 interface AdminMatch {
   id: number;
-  status: "scheduled" | "finished";
-  home_team: { name: string; code: string; flag_url: string };
-  away_team: { name: string; code: string; flag_url: string };
+  status: "scheduled" | "in_progress" | "finished";
+  home_team: Team;
+  away_team: Team;
   match_date: string;
-  group_label: string;
+  group_label: string | null;
   home_score: number | null;
   away_score: number | null;
+  stage: string;
+  venue: string | null;
 }
 
-const MOCK_MATCHES: AdminMatch[] = [
-  { id: 1, status: "finished", home_team: { name: "Brasil", code: "BRA", flag_url: getFlagUrl("BRA") }, away_team: { name: "Colombia", code: "COL", flag_url: getFlagUrl("COL") }, match_date: "2026-06-11T18:00:00Z", group_label: "D", home_score: 2, away_score: 0 },
-  { id: 2, status: "finished", home_team: { name: "Espana", code: "ESP", flag_url: getFlagUrl("ESP") }, away_team: { name: "Arabia Saudita", code: "KSA", flag_url: getFlagUrl("KSA") }, match_date: "2026-06-11T21:00:00Z", group_label: "H", home_score: 3, away_score: 1 },
-  { id: 3, status: "scheduled", home_team: { name: "Estados Unidos", code: "USA", flag_url: getFlagUrl("USA") }, away_team: { name: "Marruecos", code: "MAR", flag_url: getFlagUrl("MAR") }, match_date: "2026-06-12T18:00:00Z", group_label: "A", home_score: null, away_score: null },
-  { id: 4, status: "scheduled", home_team: { name: "Argentina", code: "ARG", flag_url: getFlagUrl("ARG") }, away_team: { name: "Peru", code: "PER", flag_url: getFlagUrl("PER") }, match_date: "2026-06-12T21:00:00Z", group_label: "B", home_score: null, away_score: null },
-  { id: 5, status: "scheduled", home_team: { name: "Alemania", code: "GER", flag_url: getFlagUrl("GER") }, away_team: { name: "Uruguay", code: "URU", flag_url: getFlagUrl("URU") }, match_date: "2026-06-13T18:00:00Z", group_label: "F", home_score: null, away_score: null },
-  { id: 6, status: "scheduled", home_team: { name: "Francia", code: "FRA", flag_url: getFlagUrl("FRA") }, away_team: { name: "Iran", code: "IRN", flag_url: getFlagUrl("IRN") }, match_date: "2026-06-14T21:00:00Z", group_label: "G", home_score: null, away_score: null },
-];
-
 export default function AdminMatchesPage() {
+  const [matches, setMatches] = useState<AdminMatch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<Record<number, { home: string; away: string }>>({});
   const [saved, setSaved] = useState<Record<number, boolean>>({});
+  const [saving, setSaving] = useState<Record<number, boolean>>({});
   const [filter, setFilter] = useState<"all" | "pending" | "finished">("all");
   const [search, setSearch] = useState("");
 
-  const filtered = MOCK_MATCHES.filter((m) => {
+  useEffect(() => {
+    async function fetchMatches() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("matches")
+        .select("*,home_team:teams!home_team_id(*),away_team:teams!away_team_id(*)")
+        .order("match_date");
+
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+
+      setMatches(data as AdminMatch[]);
+      setLoading(false);
+    }
+
+    fetchMatches();
+  }, []);
+
+  const filtered = matches.filter((m) => {
     if (filter === "pending" && m.status !== "scheduled") return false;
     if (filter === "finished" && m.status !== "finished") return false;
     if (search) {
       const q = search.toLowerCase();
-      return m.home_team.name.toLowerCase().includes(q) || m.away_team.name.toLowerCase().includes(q);
+      return (
+        m.home_team.name.toLowerCase().includes(q) ||
+        m.away_team.name.toLowerCase().includes(q)
+      );
     }
     return true;
   });
 
-  function handleSave(matchId: number) {
+  async function handleSave(matchId: number) {
     const r = results[matchId];
-    if (!r || !r.home || !r.away) return;
-    setSaved((prev) => ({ ...prev, [matchId]: true }));
-    setTimeout(() => setSaved((prev) => ({ ...prev, [matchId]: false })), 2000);
+    if (!r || r.home === "" || r.away === "") return;
+
+    setSaving((prev) => ({ ...prev, [matchId]: true }));
+
+    try {
+      const res = await fetch("/api/admin/match-result", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchId,
+          homeScore: parseInt(r.home, 10),
+          awayScore: parseInt(r.away, 10),
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Error al guardar");
+      }
+
+      // Update local state
+      setMatches((prev) =>
+        prev.map((m) =>
+          m.id === matchId
+            ? {
+                ...m,
+                home_score: parseInt(r.home, 10),
+                away_score: parseInt(r.away, 10),
+                status: "finished" as const,
+              }
+            : m
+        )
+      );
+
+      setSaved((prev) => ({ ...prev, [matchId]: true }));
+      setTimeout(() => setSaved((prev) => ({ ...prev, [matchId]: false })), 2000);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al guardar el resultado");
+    } finally {
+      setSaving((prev) => ({ ...prev, [matchId]: false }));
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="animate-spin h-8 w-8 border-2 border-teal border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-sm text-red-400">Error al cargar partidos: {error}</p>
+      </div>
+    );
   }
 
   return (
@@ -59,7 +142,9 @@ export default function AdminMatchesPage() {
               key={f}
               onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                filter === f ? "bg-teal border-teal text-bg" : "border-border text-text-secondary hover:border-text-muted"
+                filter === f
+                  ? "bg-teal border-teal text-bg"
+                  : "border-border text-text-secondary hover:border-text-muted"
               }`}
             >
               {f === "all" ? "Todos" : f === "pending" ? "Pendientes" : "Jugados"}
@@ -67,7 +152,10 @@ export default function AdminMatchesPage() {
           ))}
         </div>
         <div className="relative flex-1 min-w-[200px]">
-          <MagnifyingGlass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+          <MagnifyingGlass
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+          />
           <input
             type="text"
             value={search}
@@ -84,7 +172,13 @@ export default function AdminMatchesPage() {
           <div key={match.id} className="bg-surface border border-border rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] text-text-muted uppercase tracking-wider">
-                Grupo {match.group_label} — {new Date(match.match_date).toLocaleDateString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                {match.group_label ? `Grupo ${match.group_label}` : match.stage} —{" "}
+                {new Date(match.match_date).toLocaleDateString("es-AR", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </span>
               {match.status === "finished" && (
                 <span className="text-[10px] font-semibold text-success">Finalizado</span>
@@ -93,31 +187,60 @@ export default function AdminMatchesPage() {
 
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2 flex-1 min-w-[120px]">
-                <img src={match.home_team.flag_url} alt="" className="w-6 h-4 object-cover rounded-sm" />
+                <img
+                  src={match.home_team.flag_url}
+                  alt=""
+                  className="w-6 h-4 object-cover rounded-sm"
+                />
                 <span className="text-sm font-medium">{match.home_team.name}</span>
               </div>
 
               <div className="flex items-center gap-2">
                 {match.status === "finished" ? (
                   <div className="flex items-center gap-2">
-                    <span className="font-sora font-bold text-xl text-text-primary">{match.home_score}</span>
+                    <span className="font-sora font-bold text-xl text-text-primary">
+                      {match.home_score}
+                    </span>
                     <span className="text-text-muted">-</span>
-                    <span className="font-sora font-bold text-xl text-text-primary">{match.away_score}</span>
+                    <span className="font-sora font-bold text-xl text-text-primary">
+                      {match.away_score}
+                    </span>
                   </div>
                 ) : (
                   <>
                     <input
-                      type="number" min={0} max={20}
+                      type="number"
+                      min={0}
+                      max={20}
                       value={results[match.id]?.home ?? ""}
-                      onChange={(e) => setResults((p) => ({ ...p, [match.id]: { ...p[match.id], home: e.target.value, away: p[match.id]?.away ?? "" } }))}
+                      onChange={(e) =>
+                        setResults((p) => ({
+                          ...p,
+                          [match.id]: {
+                            ...p[match.id],
+                            home: e.target.value,
+                            away: p[match.id]?.away ?? "",
+                          },
+                        }))
+                      }
                       className="w-12 h-10 text-center font-sora font-bold bg-bg border border-border rounded focus:border-teal focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       placeholder="-"
                     />
                     <span className="text-text-muted">-</span>
                     <input
-                      type="number" min={0} max={20}
+                      type="number"
+                      min={0}
+                      max={20}
                       value={results[match.id]?.away ?? ""}
-                      onChange={(e) => setResults((p) => ({ ...p, [match.id]: { home: p[match.id]?.home ?? "", away: e.target.value } }))}
+                      onChange={(e) =>
+                        setResults((p) => ({
+                          ...p,
+                          [match.id]: {
+                            home: p[match.id]?.home ?? "",
+                            away: e.target.value,
+                          },
+                        }))
+                      }
                       className="w-12 h-10 text-center font-sora font-bold bg-bg border border-border rounded focus:border-teal focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       placeholder="-"
                     />
@@ -126,14 +249,24 @@ export default function AdminMatchesPage() {
               </div>
 
               <div className="flex items-center gap-2 flex-1 min-w-[120px] justify-end">
-                <span className="text-sm font-medium text-right">{match.away_team.name}</span>
-                <img src={match.away_team.flag_url} alt="" className="w-6 h-4 object-cover rounded-sm" />
+                <span className="text-sm font-medium text-right">
+                  {match.away_team.name}
+                </span>
+                <img
+                  src={match.away_team.flag_url}
+                  alt=""
+                  className="w-6 h-4 object-cover rounded-sm"
+                />
               </div>
 
               {match.status !== "finished" && (
                 <button
                   onClick={() => handleSave(match.id)}
-                  disabled={!results[match.id]?.home || !results[match.id]?.away}
+                  disabled={
+                    !results[match.id]?.home ||
+                    !results[match.id]?.away ||
+                    saving[match.id]
+                  }
                   className={`px-4 py-2 text-xs font-semibold rounded transition-all ${
                     saved[match.id]
                       ? "bg-success text-bg"
@@ -141,8 +274,14 @@ export default function AdminMatchesPage() {
                   }`}
                 >
                   {saved[match.id] ? (
-                    <span className="flex items-center gap-1"><Check size={14} weight="bold" /> Guardado</span>
-                  ) : "Guardar"}
+                    <span className="flex items-center gap-1">
+                      <Check size={14} weight="bold" /> Guardado
+                    </span>
+                  ) : saving[match.id] ? (
+                    "Guardando..."
+                  ) : (
+                    "Guardar"
+                  )}
                 </button>
               )}
             </div>
