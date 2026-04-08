@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import confetti from "canvas-confetti";
+import { useToast } from "@/components/Toast";
 
 interface Props {
   matchId: number;
@@ -13,14 +15,26 @@ interface Props {
 export default function PredictionForm({ matchId, existingHome, existingAway, disabled, onSubmit }: Props) {
   const [home, setHome] = useState(existingHome?.toString() ?? "");
   const [away, setAway] = useState(existingAway?.toString() ?? "");
+  const { showToast } = useToast();
 
   const hasExisting = existingHome !== undefined;
+
+  const fireConfetti = useCallback(() => {
+    confetti({
+      particleCount: 80,
+      spread: 60,
+      origin: { y: 0.7 },
+      colors: ["#0c5cac", "#D4A853", "#22C55E", "#F59E0B", "#EF4444", "#ffffff"],
+    });
+  }, []);
 
   function handleSubmit() {
     const h = parseInt(home);
     const a = parseInt(away);
     if (isNaN(h) || isNaN(a) || h < 0 || a < 0) return;
     onSubmit(matchId, h, a);
+    showToast("¡Pronóstico guardado!");
+    if (!hasExisting) fireConfetti();
   }
 
   return (

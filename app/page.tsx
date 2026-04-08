@@ -1,8 +1,20 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
+import Countdown from "@/components/Countdown";
 
 export default function HomePage() {
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-6">
+      <Image
+        src="/logo-wave.png"
+        alt="Wave Brands"
+        width={140}
+        height={40}
+        className="h-8 md:h-10 w-auto object-contain mb-10"
+        priority
+      />
       <h1 className="font-sora font-extrabold text-5xl md:text-7xl tracking-tightest text-center mb-4">
         Prode Mundial<br />
         <span className="text-teal">2026</span>
@@ -10,12 +22,15 @@ export default function HomePage() {
       <p className="font-grotesk text-text-secondary text-center max-w-md mb-8">
         Pronostica los resultados del Mundial y competi con tus companeros.
       </p>
-      <Link
-        href="/login"
-        className="font-grotesk font-semibold text-sm px-8 py-3 bg-teal text-bg rounded hover:bg-teal-dim transition-colors"
-      >
-        Ingresar
-      </Link>
+      <Countdown targetDate="2026-06-11T17:00:00Z" />
+      <div className="mt-8">
+        <Link
+          href="/login"
+          className="font-grotesk font-semibold text-sm px-8 py-3 bg-teal text-bg rounded hover:bg-teal-dim transition-colors"
+        >
+          Ingresar
+        </Link>
+      </div>
     </div>
   );
 }
