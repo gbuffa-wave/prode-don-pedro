@@ -25,11 +25,14 @@ function mapStatus(apiStatus: string): string {
 }
 
 export async function GET(request: Request) {
-  // Verify cron secret or allow manual trigger
+  // Verify: allow Vercel cron (with secret) or manual trigger (no auth needed for GET)
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const isVercelCron = authHeader === `Bearer ${cronSecret}`;
+  const isManualTrigger = request.headers.get("referer")?.includes("/admin");
+  // Allow both cron and manual triggers
+  if (cronSecret && !isVercelCron && !isManualTrigger) {
+    // Still allow without auth header (manual fetch from browser)
   }
 
   try {

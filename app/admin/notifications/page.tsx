@@ -40,7 +40,11 @@ export default function AdminNotificationsPage() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/send-reminders", { method: "POST" });
+      const res = await fetch("/api/send-reminders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ test: true }),
+      });
       const data = await res.json();
 
       if (data.error) {
@@ -50,7 +54,7 @@ export default function AdminNotificationsPage() {
       } else {
         setResult({
           success: true,
-          message: `${data.sent} email${data.sent !== 1 ? "s" : ""} enviado${data.sent !== 1 ? "s" : ""} — ${data.matchesCount} partido${data.matchesCount !== 1 ? "s" : ""} mañana`,
+          message: `${data.sent} email${data.sent !== 1 ? "s" : ""} enviado${data.sent !== 1 ? "s" : ""} — ${data.matchesCount} partido${data.matchesCount !== 1 ? "s" : ""}${data.test ? " (modo test)" : ""}${data.sentTo ? " → " + data.sentTo.join(", ") : ""}`,
         });
         setLastSent({ date: new Date().toISOString(), sent: data.sent, matches: data.matchesCount });
       }
@@ -98,7 +102,7 @@ export default function AdminNotificationsPage() {
         {/* Description */}
         <div>
           <p className="text-text-secondary text-sm">
-            Envía un email a todos los usuarios que no completaron sus pronósticos para los partidos de mañana.
+            Envía un email de prueba a todos los usuarios con los próximos 4 partidos del fixture. En producción (durante el Mundial), enviará solo los partidos de mañana.
           </p>
         </div>
 

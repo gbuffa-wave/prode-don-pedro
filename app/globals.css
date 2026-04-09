@@ -21,11 +21,17 @@
   --tracking-tightest: -0.04em;
 }
 
+html {
+  background-color: #0A0A0A;
+  color-scheme: dark;
+}
+
 body {
   background: linear-gradient(180deg, #0A0A0A 0%, #0A1528 45%, #0A1020 70%, #0A0A0A 100%);
   background-attachment: fixed;
   color: #F5F5F5;
   min-height: 100dvh;
+  min-height: -webkit-fill-available;
 }
 
 .safe-area-bottom {

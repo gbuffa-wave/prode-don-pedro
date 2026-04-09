@@ -1,6 +1,6 @@
 export type MatchStatus = "scheduled" | "in_progress" | "finished";
 export type UserRole = "player" | "admin";
-export type ScoringRuleType = "exact" | "winner_and_diff" | "winner_only";
+export type ScoringRuleType = "exact" | "winner_and_diff" | "winner_only" | "champion";
 
 export interface Team {
   id: number;

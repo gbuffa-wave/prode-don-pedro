@@ -10,29 +10,45 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export async function POST(request: Request) {
   try {
-    // Get tomorrow's date range
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dayAfter = new Date(tomorrow);
-    dayAfter.setDate(dayAfter.getDate() + 1);
+    const body = await request.json().catch(() => ({}));
+    const isTest = body.test === true;
 
-    const startOfTomorrow = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate()).toISOString();
-    const endOfTomorrow = new Date(dayAfter.getFullYear(), dayAfter.getMonth(), dayAfter.getDate()).toISOString();
+    let matches;
 
-    // Get tomorrow's matches
-    const { data: matches } = await supabase
-      .from("matches")
-      .select("id, match_date, group_label, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)")
-      .gte("match_date", startOfTomorrow)
-      .lt("match_date", endOfTomorrow)
-      .eq("status", "scheduled");
+    if (isTest) {
+      // Test mode: get next 4 scheduled matches regardless of date
+      const { data } = await supabase
+        .from("matches")
+        .select("id, match_date, group_label, home_team:teams!home_team_id(name,code), away_team:teams!away_team_id(name,code)")
+        .eq("status", "scheduled")
+        .order("match_date")
+        .limit(4);
+      matches = data;
+    } else {
+      // Production mode: get tomorrow's matches
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dayAfter = new Date(tomorrow);
+      dayAfter.setDate(dayAfter.getDate() + 1);
 
-    if (!matches || matches.length === 0) {
-      return Response.json({ message: "No hay partidos mañana", sent: 0 });
+      const startOfTomorrow = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate()).toISOString();
+      const endOfTomorrow = new Date(dayAfter.getFullYear(), dayAfter.getMonth(), dayAfter.getDate()).toISOString();
+
+      const { data } = await supabase
+        .from("matches")
+        .select("id, match_date, group_label, home_team:teams!home_team_id(name,code), away_team:teams!away_team_id(name,code)")
+        .gte("match_date", startOfTomorrow)
+        .lt("match_date", endOfTomorrow)
+        .eq("status", "scheduled");
+      matches = data;
     }
 
-    // Get all users with their auth emails
+    if (!matches || matches.length === 0) {
+      return Response.json({ message: "No hay partidos para notificar", sent: 0 });
+    }
+
+    // Get all users
     const { data: appUsers } = await supabase.from("app_users").select("id, display_name");
     if (!appUsers) return Response.json({ error: "No users found" }, { status: 500 });
 
@@ -40,13 +56,13 @@ export async function POST(request: Request) {
     const { data: { users: authUsers } } = await supabase.auth.admin.listUsers();
 
     let sentCount = 0;
+    const sentTo: string[] = [];
 
     for (const appUser of appUsers) {
-      // Find auth user to get email
       const authUser = authUsers?.find(u => u.id === appUser.id);
       if (!authUser?.email) continue;
 
-      // Get this user's predictions for tomorrow's matches
+      // Check pending predictions
       const matchIds = matches.map((m: any) => m.id);
       const { data: predictions } = await supabase
         .from("predictions")
@@ -59,10 +75,11 @@ export async function POST(request: Request) {
 
       if (pendingMatches.length === 0) continue;
 
-      // Build and send email
       const pendingForEmail = pendingMatches.map((m: any) => ({
         homeTeam: m.home_team?.name || "TBD",
         awayTeam: m.away_team?.name || "TBD",
+        homeCode: m.home_team?.code || "",
+        awayCode: m.away_team?.code || "",
         matchDate: new Date(m.match_date).toLocaleString("es-AR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
         group: m.group_label || "",
       }));
@@ -73,20 +90,23 @@ export async function POST(request: Request) {
       await resend.emails.send({
         from: process.env.EMAIL_FROM || "Prode 2026 <onboarding@resend.dev>",
         to: authUser.email,
-        subject: `⚽ ${pendingMatches.length} partido${pendingMatches.length !== 1 ? "s" : ""} sin pronosticar — Prode 2026`,
+        subject: isTest
+          ? `🧪 [TEST] ⚽ ${pendingMatches.length} partido${pendingMatches.length !== 1 ? "s" : ""} sin pronosticar — Prode 2026`
+          : `⚽ ${pendingMatches.length} partido${pendingMatches.length !== 1 ? "s" : ""} sin pronosticar — Prode 2026`,
         html,
       });
 
       sentCount++;
+      sentTo.push(authUser.email);
     }
 
-    // Log the send
+    // Log
     await supabase.from("app_config").upsert({
       key: "last_reminder_sent",
-      value: JSON.stringify({ date: new Date().toISOString(), sent: sentCount, matches: matches.length }),
+      value: JSON.stringify({ date: new Date().toISOString(), sent: sentCount, matches: matches.length, test: isTest }),
     });
 
-    return Response.json({ success: true, sent: sentCount, matchesCount: matches.length });
+    return Response.json({ success: true, sent: sentCount, matchesCount: matches.length, sentTo, test: isTest });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500 });
   }

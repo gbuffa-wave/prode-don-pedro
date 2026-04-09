@@ -47,6 +47,8 @@ export async function GET(request: Request) {
           display_name: data.user.user_metadata?.full_name || data.user.email?.split("@")[0] || null,
           avatar_url: data.user.user_metadata?.avatar_url || null,
         });
+        // New user → onboarding to pick team
+        return NextResponse.redirect(`${origin}/onboarding`);
       } else {
         // Update existing user's avatar and name (might have changed)
         await adminSupabase.from("app_users")
@@ -55,6 +57,17 @@ export async function GET(request: Request) {
             avatar_url: data.user.user_metadata?.avatar_url || null,
           })
           .eq("id", data.user.id);
+
+        // Check if user has a team, if not → onboarding
+        const { data: userData } = await adminSupabase
+          .from("app_users")
+          .select("team")
+          .eq("id", data.user.id)
+          .single();
+
+        if (!userData?.team) {
+          return NextResponse.redirect(`${origin}/onboarding`);
+        }
       }
 
       return NextResponse.redirect(`${origin}/fixture`);

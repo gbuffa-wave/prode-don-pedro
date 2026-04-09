@@ -73,6 +73,7 @@ export default function AdminScoringPage() {
                 {rule.rule_type === "exact" && "El jugador acierta el resultado exacto (ej: 2-1)"}
                 {rule.rule_type === "winner_and_diff" && "Acierta ganador y diferencia de goles (ej: predijo 3-1, fue 2-0)"}
                 {rule.rule_type === "winner_only" && "Solo acierta quien gana o si es empate"}
+                {rule.rule_type === "champion" && "Acertar qué selección gana el Mundial (se otorga al finalizar el torneo)"}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -100,6 +101,7 @@ export default function AdminScoringPage() {
                 {r.rule_type === "exact" && "Predijo 2 - 1"}
                 {r.rule_type === "winner_and_diff" && "Predijo 3 - 2"}
                 {r.rule_type === "winner_only" && "Predijo 1 - 0"}
+                {r.rule_type === "champion" && "Acertó el campeón"}
               </span>
               <span className="font-sora font-bold text-teal">+{r.points} pts</span>
             </div>

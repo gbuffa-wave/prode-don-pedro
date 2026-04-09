@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Trophy, SoccerBall, Medal, SignOut, Crown } from "@phosphor-icons/react";
+import { Trophy, SoccerBall, Medal, SignOut, Crown, GearSix } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 
 const NAV_ITEMS = [
@@ -18,18 +18,21 @@ const NAV_ITEMS = [
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string | null; avatar: string | null }>({ name: null, avatar: null });
+  const [user, setUser] = useState<{ name: string | null; avatar: string | null; isAdmin: boolean }>({ name: null, avatar: null, isAdmin: false });
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUser({
-          name: data.user.user_metadata?.full_name || null,
-          avatar: data.user.user_metadata?.avatar_url || null,
-        });
-      }
-    });
+    fetch("/api/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setUser({
+            name: data.user.name,
+            avatar: data.user.avatar,
+            isAdmin: data.user.role === "admin",
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   async function handleSignOut() {
@@ -76,6 +79,17 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            {user.isAdmin && (
+              <Link
+                href="/admin"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                  pathname.startsWith("/admin") ? "bg-gold/10 text-gold" : "text-text-muted hover:text-gold"
+                }`}
+              >
+                <GearSix size={16} weight={pathname.startsWith("/admin") ? "fill" : "regular"} />
+                <span>Admin</span>
+              </Link>
+            )}
             {user.avatar && <UserAvatar src={user.avatar} name={user.name} size={28} />}
             <button
               onClick={handleSignOut}
@@ -88,56 +102,52 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile: top header with logo */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-md border-b border-border">
-        <div className="flex items-center justify-center gap-3 h-12">
-          <Image
-            src="/logo-wave.png"
-            alt="Wave Brands"
-            width={45}
-            height={13}
-            className="h-2.5 w-auto object-contain"
-          />
-          <div className="h-4 w-px bg-border" />
-          <span className="font-sora font-bold text-sm tracking-tight">
-            <span className="text-text-primary">Prode</span>
-            <span className="text-teal ml-1">2026</span>
-          </span>
+      {/* Mobile: top header with logo + nav */}
+      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-md border-b border-border">
+        {/* Logo row */}
+        <div className="flex items-center justify-between px-4 h-11">
+          <Link href="/fixture" className="flex items-center gap-2">
+            <Image
+              src="/logo-wave.png"
+              alt="Wave Brands"
+              width={45}
+              height={13}
+              className="h-2.5 w-auto object-contain"
+            />
+            <div className="h-3 w-px bg-border" />
+            <span className="font-sora font-bold text-xs tracking-tight">
+              <span className="text-text-primary">Prode</span>
+              <span className="text-teal ml-1">2026</span>
+            </span>
+          </Link>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-1.5 text-text-muted"
+          >
+            {user.avatar ? (
+              <UserAvatar src={user.avatar} name={user.name} size={22} />
+            ) : (
+              <SignOut size={16} />
+            )}
+          </button>
         </div>
-      </header>
-
-      {/* Mobile: bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-md border-t border-border safe-area-bottom">
-        <div className="flex items-center justify-around h-16 px-2">
+        {/* Nav tabs */}
+        <div className="flex items-center justify-around h-10 border-t border-border/50">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-lg transition-colors ${
-                  active
-                    ? "text-teal"
-                    : "text-text-muted"
+                className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
+                  active ? "text-teal" : "text-text-muted"
                 }`}
               >
-                <Icon size={22} weight={active ? "fill" : "regular"} />
+                <Icon size={16} weight={active ? "fill" : "regular"} />
                 <span className="text-[10px] font-semibold">{label}</span>
               </Link>
             );
           })}
-          <button
-            onClick={handleSignOut}
-            className="flex flex-col items-center gap-0.5 px-4 py-1.5 text-text-muted"
-            title="Cerrar sesion"
-          >
-            {user.avatar ? (
-              <UserAvatar src={user.avatar} name={user.name} size={22} />
-            ) : (
-              <SignOut size={22} />
-            )}
-            <span className="text-[10px] font-semibold">Salir</span>
-          </button>
         </div>
       </nav>
     </>

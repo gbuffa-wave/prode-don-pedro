@@ -68,8 +68,7 @@ export default function PredictionForm({ matchId, existingHome, existingAway, di
       {!disabled && (
         <button
           onClick={handleSubmit}
-          disabled={!home || !away}
-          className="ml-1 px-3 py-2 text-xs font-semibold bg-teal text-bg rounded hover:bg-teal-dim transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className="ml-1 px-3 py-2 text-xs font-semibold bg-teal text-bg rounded hover:bg-teal-dim transition-colors"
         >
           {hasExisting ? "Editar" : "OK"}
         </button>

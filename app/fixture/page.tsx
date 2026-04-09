@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import MatchCard from "@/components/MatchCard";
-import { Calendar, ListBullets, FunnelSimple, TreeStructure } from "@phosphor-icons/react";
+import Countdown from "@/components/Countdown";
+import ChampionPicker from "@/components/ChampionPicker";
+import ScoringInfo from "@/components/ScoringInfo";
+import { Calendar, ListBullets, FunnelSimple, TreeStructure, Trophy } from "@phosphor-icons/react";
 import BracketView from "@/components/BracketView";
 import { createClient } from "@/lib/supabase/client";
 import type { Match, Team } from "@/lib/types";
@@ -92,11 +95,47 @@ export default function FixturePage() {
   ).length;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="font-sora font-bold text-2xl mb-1">Fixture</h1>
-        <p className="text-text-secondary text-sm">Carga tus pronosticos para cada partido.</p>
+    <div>
+      {/* Hero banner */}
+      <div className="relative w-full overflow-hidden bg-surface border-b border-border">
+        {/* Background: replaceable image */}
+        <div className="absolute inset-0">
+          {/* Placeholder gradient — replace with your illustration/design */}
+          <div className="w-full h-full bg-gradient-to-br from-teal/10 via-transparent to-teal/5" />
+        </div>
+
+        <img src="/hero-banner.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
+
+        {/* Dark overlay for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/60 to-transparent" />
+
+        <div className="relative z-10 max-w-2xl mx-auto px-4 pt-8 pb-10 md:pt-12 md:pb-14">
+          <p className="font-grotesk font-semibold text-[10px] text-teal tracking-widest uppercase mb-3">
+            Mundial 2026
+          </p>
+          <h1 className="font-sora font-extrabold text-3xl md:text-5xl tracking-tightest leading-none mb-3">
+            Prode <span className="text-teal">2026</span>
+          </h1>
+          <p className="font-grotesk text-sm text-text-secondary max-w-md">
+            Pronostica los resultados de cada partido y competi con tus compañeros. ¿Quién sabe más de fútbol?
+          </p>
+
+          {/* Countdown */}
+          <div className="mt-6">
+            <p className="text-[10px] text-text-muted uppercase tracking-wider mb-2">Comienza en</p>
+            <Countdown targetDate="2026-06-11T17:00:00Z" />
+          </div>
+        </div>
       </div>
+
+      {/* Fixture content */}
+      <div className="max-w-2xl mx-auto px-4 py-6">
+
+      {/* Champion prediction */}
+      <ChampionPicker teams={matches.map(m => m.home_team).filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i).sort((a, b) => a.name.localeCompare(b.name))} />
+
+      {/* Scoring info */}
+      <ScoringInfo />
 
       {/* View tabs */}
       <div className="flex gap-2 mb-4">
@@ -217,6 +256,7 @@ export default function FixturePage() {
           ))}
         </div>
       ) : null}
+      </div>
     </div>
   );
 }
