@@ -4,42 +4,42 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
-import { Check, FilmSlate, Megaphone, MicrophoneStage, Tree, Moon, Sun, Lighthouse, Compass, Star, SoccerBall } from "@phosphor-icons/react";
+import { Check } from "@phosphor-icons/react";
 import confetti from "canvas-confetti";
 import UserAvatar from "@/components/UserAvatar";
-import type { IconProps } from "@phosphor-icons/react";
+import { getTeamIcon } from "@/lib/team-icons";
 
-const EQUIPOS: { name: string; icon: React.ComponentType<IconProps> }[] = [
-  { name: "Contenidos", icon: FilmSlate },
-  { name: "Comunicación", icon: Megaphone },
-  { name: "Eventos", icon: MicrophoneStage },
-  { name: "Bosque", icon: Tree },
-  { name: "Luna", icon: Moon },
-  { name: "Sol", icon: Sun },
-  { name: "Faro", icon: Lighthouse },
-  { name: "Dirección", icon: Compass },
-  { name: "Estrella", icon: Star },
-];
+interface InternalTeam {
+  id: number;
+  name: string;
+  icon: string;
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ name: string | null; avatar: string | null; email: string | null }>({ name: null, avatar: null, email: null });
+  const [teams, setTeams] = useState<InternalTeam[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
+
+    Promise.all([
+      supabase.auth.getUser(),
+      supabase.from("internal_teams").select("*").order("id"),
+    ]).then(([authRes, teamsRes]) => {
+      if (!authRes.data.user) {
         router.push("/login");
         return;
       }
       setUser({
-        name: data.user.user_metadata?.full_name || null,
-        avatar: data.user.user_metadata?.avatar_url || null,
-        email: data.user.email || null,
+        name: authRes.data.user.user_metadata?.full_name || null,
+        avatar: authRes.data.user.user_metadata?.avatar_url || null,
+        email: authRes.data.user.email || null,
       });
+      setTeams(teamsRes.data || []);
       setLoading(false);
     });
   }, [router]);
@@ -78,7 +78,6 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md space-y-8">
-        {/* Welcome */}
         <div className="text-center">
           <Image
             src="/logo-wave.png"
@@ -98,36 +97,37 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        {/* Team selection */}
         <div>
           <p className="font-grotesk font-semibold text-xs text-text-muted uppercase tracking-wider mb-3 text-center">
             Elegí tu equipo
           </p>
           <div className="grid grid-cols-3 gap-2">
-            {EQUIPOS.map(({ name, icon: Icon }) => (
-              <button
-                key={name}
-                onClick={() => setSelectedTeam(name)}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-lg transition-all ${
-                  selectedTeam === name
-                    ? "bg-teal/15 border-2 border-teal"
-                    : "bg-surface border-2 border-transparent hover:border-border"
-                }`}
-              >
-                <Icon
-                  size={24}
-                  weight={selectedTeam === name ? "fill" : "regular"}
-                  className={selectedTeam === name ? "text-teal" : "text-text-muted"}
-                />
-                <span className={`text-xs font-medium ${selectedTeam === name ? "text-teal" : "text-text-secondary"}`}>
-                  {name}
-                </span>
-              </button>
-            ))}
+            {teams.map((team) => {
+              const Icon = getTeamIcon(team.icon);
+              return (
+                <button
+                  key={team.id}
+                  onClick={() => setSelectedTeam(team.name)}
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-lg transition-all ${
+                    selectedTeam === team.name
+                      ? "bg-teal/15 border-2 border-teal"
+                      : "bg-surface border-2 border-transparent hover:border-border"
+                  }`}
+                >
+                  <Icon
+                    size={24}
+                    weight={selectedTeam === team.name ? "fill" : "regular"}
+                    className={selectedTeam === team.name ? "text-teal" : "text-text-muted"}
+                  />
+                  <span className={`text-xs font-medium ${selectedTeam === team.name ? "text-teal" : "text-text-secondary"}`}>
+                    {team.name}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Confirm */}
         <button
           onClick={handleSave}
           disabled={!selectedTeam || saving}

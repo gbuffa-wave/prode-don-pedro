@@ -7,13 +7,12 @@ import LeaderboardTable from "@/components/LeaderboardTable";
 import { Trophy } from "@phosphor-icons/react";
 import type { LeaderboardEntry } from "@/lib/types";
 
-const EQUIPOS = ["Waveteam", "Contenidos", "Comunicación", "Eventos", "Bosque", "Luna", "Sol", "Faro", "Dirección", "Estrella"];
-
 interface UserWithTeam extends LeaderboardEntry {
   equipo: string;
 }
 
 export default function LeaderboardPage() {
+  const [equipos, setEquipos] = useState<string[]>(["Waveteam"]);
   const [selectedEquipo, setSelectedEquipo] = useState("Waveteam");
   const [entries, setEntries] = useState<UserWithTeam[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +25,12 @@ export default function LeaderboardPage() {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (user) setCurrentUserId(user.id);
+
+      // Fetch internal teams
+      const { data: teamsData } = await supabase.from("internal_teams").select("name").order("id");
+      if (teamsData) {
+        setEquipos(["Waveteam", ...teamsData.map(t => t.name)]);
+      }
 
       // Fetch all users
       const { data: users } = await supabase
@@ -132,7 +137,7 @@ export default function LeaderboardPage() {
 
       {/* Equipo selector */}
       <div className="grid grid-cols-5 gap-2 mb-4">
-        {EQUIPOS.map((equipo) => (
+        {equipos.map((equipo) => (
           <button
             key={equipo}
             onClick={() => setSelectedEquipo(equipo)}

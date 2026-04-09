@@ -3,11 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { SoccerBall, Gear, Trophy, ChartBar, ArrowLeft, Crown, Users, EnvelopeSimple, ArrowCounterClockwise } from "@phosphor-icons/react";
+import { SoccerBall, Gear, Trophy, ChartBar, ArrowLeft, Crown, Users, EnvelopeSimple, ArrowCounterClockwise, ShieldStar } from "@phosphor-icons/react";
 
 const ADMIN_NAV = [
   { href: "/admin", label: "Dashboard", icon: ChartBar },
   { href: "/admin/users", label: "Usuarios", icon: Users },
+  { href: "/admin/teams", label: "Equipos", icon: ShieldStar },
   { href: "/admin/matches", label: "Partidos", icon: SoccerBall },
   { href: "/admin/scoring", label: "Puntaje", icon: Gear },
   { href: "/admin/prizes", label: "Premios", icon: Trophy },

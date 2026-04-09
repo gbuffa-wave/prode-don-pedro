@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, FilmSlate, Megaphone, MicrophoneStage, Tree, Moon, Sun, Lighthouse, Compass, Star, Trash } from "@phosphor-icons/react";
+import { Check, Trash } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
-import type { IconProps } from "@phosphor-icons/react";
+import { getTeamIcon } from "@/lib/team-icons";
 
 interface AppUser {
   id: string;
@@ -14,30 +14,29 @@ interface AppUser {
   created_at: string;
 }
 
-const EQUIPOS: { name: string; icon: React.ComponentType<IconProps> }[] = [
-  { name: "Contenidos", icon: FilmSlate },
-  { name: "Comunicación", icon: Megaphone },
-  { name: "Eventos", icon: MicrophoneStage },
-  { name: "Bosque", icon: Tree },
-  { name: "Luna", icon: Moon },
-  { name: "Sol", icon: Sun },
-  { name: "Faro", icon: Lighthouse },
-  { name: "Dirección", icon: Compass },
-  { name: "Estrella", icon: Star },
-];
+interface InternalTeam {
+  id: number;
+  name: string;
+  icon: string;
+}
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
+  const [teams, setTeams] = useState<InternalTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    fetch("/api/admin/users")
-      .then(res => res.json())
-      .then(data => { setUsers(data.users || []); setLoading(false); })
-      .catch(() => setLoading(false));
+    Promise.all([
+      fetch("/api/admin/users").then(r => r.json()),
+      fetch("/api/admin/teams").then(r => r.json()),
+    ]).then(([usersData, teamsData]) => {
+      setUsers(usersData.users || []);
+      setTeams(teamsData.teams || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
   async function handleTeamChange(userId: string, team: string) {
@@ -91,8 +90,7 @@ export default function AdminUsersPage() {
 
       <div className="space-y-3">
         {users.map((user) => {
-          const teamInfo = EQUIPOS.find(e => e.name === user.team);
-          const TeamIcon = teamInfo?.icon;
+          const teamInfo = teams.find(t => t.name === user.team);
 
           return (
             <div key={user.id} className="bg-surface border border-border rounded-lg p-4">
@@ -126,21 +124,24 @@ export default function AdminUsersPage() {
 
               {/* Team selector */}
               <div className="flex gap-1.5 flex-wrap">
-                {EQUIPOS.map(({ name, icon: Icon }) => (
+                {teams.map((team) => {
+                  const Icon = getTeamIcon(team.icon);
+                  return (
                   <button
-                    key={name}
-                    onClick={() => handleTeamChange(user.id, name)}
+                    key={team.name}
+                    onClick={() => handleTeamChange(user.id, team.name)}
                     disabled={saving[user.id]}
                     className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-all ${
-                      user.team === name
+                      user.team === team.name
                         ? "bg-teal/15 border border-teal text-teal"
                         : "bg-bg border border-transparent text-text-muted hover:border-border hover:text-text-secondary"
                     }`}
                   >
-                    <Icon size={12} weight={user.team === name ? "fill" : "regular"} />
-                    {name}
+                    <Icon size={12} weight={user.team === team.name ? "fill" : "regular"} />
+                    {team.name}
                   </button>
-                ))}
+                  );
+                })}
               </div>
 
               {saved[user.id] && (
