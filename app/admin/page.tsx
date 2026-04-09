@@ -1,43 +1,61 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { SoccerBall, Users, Target, Trophy } from "@phosphor-icons/react";
+import { createClient } from "@/lib/supabase/client";
 
-const stats = [
-  { label: "Usuarios registrados", value: "4.832", icon: Users, color: "text-teal" },
-  { label: "Pronosticos cargados", value: "38.240", icon: Target, color: "text-gold" },
-  { label: "Partidos jugados", value: "24", icon: SoccerBall, color: "text-success" },
-  { label: "Partidos pendientes", value: "40", icon: Trophy, color: "text-warning" },
-];
+interface Stats {
+  users: number;
+  predictions: number;
+  matchesPlayed: number;
+  matchesPending: number;
+}
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<Stats>({ users: 0, predictions: 0, matchesPlayed: 0, matchesPending: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function fetchStats() {
+      const [usersRes, predictionsRes, matchesRes] = await Promise.all([
+        supabase.from("app_users").select("id", { count: "exact", head: true }),
+        supabase.from("predictions").select("id", { count: "exact", head: true }),
+        supabase.from("matches").select("id, status"),
+      ]);
+
+      const matches = matchesRes.data || [];
+      setStats({
+        users: usersRes.count || 0,
+        predictions: predictionsRes.count || 0,
+        matchesPlayed: matches.filter(m => m.status === "finished").length,
+        matchesPending: matches.filter(m => m.status === "scheduled").length,
+      });
+      setLoading(false);
+    }
+
+    fetchStats();
+  }, []);
+
+  const cards = [
+    { label: "Usuarios registrados", value: stats.users, icon: Users, color: "text-teal" },
+    { label: "Pronósticos cargados", value: stats.predictions, icon: Target, color: "text-gold" },
+    { label: "Partidos jugados", value: stats.matchesPlayed, icon: SoccerBall, color: "text-success" },
+    { label: "Partidos pendientes", value: stats.matchesPending, icon: Trophy, color: "text-warning" },
+  ];
+
   return (
     <div>
       <h2 className="font-sora font-bold text-lg mb-4">Dashboard</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {stats.map((s) => (
+        {cards.map((s) => (
           <div key={s.label} className="bg-surface border border-border rounded-lg p-4">
             <s.icon size={20} className={`${s.color} mb-2`} />
-            <p className={`font-sora font-bold text-2xl ${s.color}`}>{s.value}</p>
+            <p className={`font-sora font-bold text-2xl ${s.color}`}>
+              {loading ? "—" : s.value}
+            </p>
             <p className="text-xs text-text-muted mt-1">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent activity */}
-      <h3 className="font-sora font-semibold text-sm text-text-muted uppercase tracking-wider mb-3">Actividad reciente</h3>
-      <div className="bg-surface border border-border rounded-lg divide-y divide-border">
-        {[
-          { action: "Resultado cargado", detail: "Brasil 2 - 0 Colombia", time: "Hace 2 horas" },
-          { action: "Resultado cargado", detail: "Espana 3 - 1 Arabia Saudita", time: "Hace 3 horas" },
-          { action: "Puntaje actualizado", detail: "Regla 'resultado exacto' → 10 pts", time: "Hace 1 dia" },
-          { action: "Premio agregado", detail: "1er puesto: Viaje a ver la final", time: "Hace 2 dias" },
-        ].map((item, i) => (
-          <div key={i} className="px-4 py-3 flex items-center justify-between">
-            <div>
-              <p className="font-grotesk text-sm text-text-primary">{item.action}</p>
-              <p className="text-xs text-text-muted">{item.detail}</p>
-            </div>
-            <span className="text-xs text-text-muted whitespace-nowrap ml-4">{item.time}</span>
           </div>
         ))}
       </div>
