@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { SoccerBall, Gear, Trophy, ChartBar, ArrowLeft, Crown, Users, EnvelopeSimple } from "@phosphor-icons/react";
+import { SoccerBall, Gear, Trophy, ChartBar, ArrowLeft, Crown, Users, EnvelopeSimple, ArrowCounterClockwise } from "@phosphor-icons/react";
 
 const ADMIN_NAV = [
   { href: "/admin", label: "Dashboard", icon: ChartBar },
@@ -14,6 +14,7 @@ const ADMIN_NAV = [
   { href: "/admin/winners", label: "Ganadores", icon: Crown },
   { href: "/admin/reports", label: "Reportes", icon: ChartBar },
   { href: "/admin/notifications", label: "Emails", icon: EnvelopeSimple },
+  { href: "/admin/reset", label: "Reiniciar", icon: ArrowCounterClockwise },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

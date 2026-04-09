@@ -29,24 +29,6 @@ interface WeeklyWinner {
   matches_count: number;
 }
 
-// Mock daily winners
-const MOCK_DAILY: DailyWinner[] = [
-  { date: "2026-06-11", dateLabel: "Mie 11 Jun", user_id: "user-003", display_name: "Jugador 3", avatar_url: null, points: 23, correct_exact: 2, matches_count: 3 },
-  { date: "2026-06-12", dateLabel: "Jue 12 Jun", user_id: "user-012", display_name: "Jugador 12", avatar_url: null, points: 20, correct_exact: 1, matches_count: 4 },
-  { date: "2026-06-13", dateLabel: "Vie 13 Jun", user_id: "user-007", display_name: "Jugador 7", avatar_url: null, points: 26, correct_exact: 2, matches_count: 3 },
-  { date: "2026-06-14", dateLabel: "Sab 14 Jun", user_id: "user-001", display_name: "Jugador 1", avatar_url: null, points: 30, correct_exact: 3, matches_count: 4 },
-  { date: "2026-06-15", dateLabel: "Dom 15 Jun", user_id: "user-019", display_name: "Jugador 19", avatar_url: null, points: 18, correct_exact: 1, matches_count: 3 },
-  { date: "2026-06-16", dateLabel: "Lun 16 Jun", user_id: "user-003", display_name: "Jugador 3", avatar_url: null, points: 25, correct_exact: 2, matches_count: 4 },
-  { date: "2026-06-17", dateLabel: "Mar 17 Jun", user_id: "user-008", display_name: "Jugador 8", avatar_url: null, points: 21, correct_exact: 1, matches_count: 3 },
-];
-
-// Mock weekly winners
-const MOCK_WEEKLY: WeeklyWinner[] = [
-  { week: 1, weekLabel: "Semana 1", dateRange: "11 - 17 Jun", user_id: "user-003", display_name: "Jugador 3", avatar_url: null, points: 85, correct_exact: 6, matches_count: 16 },
-  { week: 2, weekLabel: "Semana 2", dateRange: "18 - 24 Jun", user_id: "user-012", display_name: "Jugador 12", avatar_url: null, points: 78, correct_exact: 5, matches_count: 16 },
-  { week: 3, weekLabel: "Semana 3", dateRange: "25 Jun - 1 Jul", user_id: "user-001", display_name: "Jugador 1", avatar_url: null, points: 92, correct_exact: 8, matches_count: 16 },
-];
-
 function WinnerCard({ rank, name, avatarUrl, points, exactCount, matchesCount, period, isHighlighted }: {
   rank: number;
   name: string;
@@ -91,6 +73,11 @@ function WinnerCard({ rank, name, avatarUrl, points, exactCount, matchesCount, p
 export default function WinnersPage() {
   const [view, setView] = useState<ViewMode>("diario");
 
+  // Real data will be fetched here in the future.
+  // For now, show empty state until winners are computed.
+  const dailyWinners: DailyWinner[] = [];
+  const weeklyWinners: WeeklyWinner[] = [];
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="mb-6">
@@ -126,47 +113,54 @@ export default function WinnersPage() {
 
       {/* Daily winners */}
       {view === "diario" && (
-        <div className="space-y-3">
-          {MOCK_DAILY.map((w) => (
-            <WinnerCard
-              key={w.date}
-              rank={1}
-              name={w.display_name}
-              avatarUrl={w.avatar_url}
-              points={w.points}
-              exactCount={w.correct_exact}
-              matchesCount={w.matches_count}
-              period={w.dateLabel}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Weekly winners */}
-      {view === "semanal" && (
-        <div className="space-y-4">
-          {MOCK_WEEKLY.map((w) => (
-            <div key={w.week}>
+        dailyWinners.length > 0 ? (
+          <div className="space-y-3">
+            {dailyWinners.map((w) => (
               <WinnerCard
+                key={w.date}
                 rank={1}
                 name={w.display_name}
                 avatarUrl={w.avatar_url}
                 points={w.points}
                 exactCount={w.correct_exact}
                 matchesCount={w.matches_count}
-                period={`${w.weekLabel} — ${w.dateRange}`}
-                isHighlighted
+                period={w.dateLabel}
               />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Trophy size={48} className="text-text-muted mx-auto mb-3" />
+            <p className="text-text-muted text-sm">Todavía no hay ganadores. Comienzan con el primer partido.</p>
+          </div>
+        )
       )}
 
-      {MOCK_DAILY.length === 0 && MOCK_WEEKLY.length === 0 && (
-        <div className="text-center py-12">
-          <Trophy size={48} className="text-text-muted mx-auto mb-3" />
-          <p className="text-text-muted text-sm">Todavia no hay ganadores. Comienzan con el primer partido.</p>
-        </div>
+      {/* Weekly winners */}
+      {view === "semanal" && (
+        weeklyWinners.length > 0 ? (
+          <div className="space-y-4">
+            {weeklyWinners.map((w) => (
+              <div key={w.week}>
+                <WinnerCard
+                  rank={1}
+                  name={w.display_name}
+                  avatarUrl={w.avatar_url}
+                  points={w.points}
+                  exactCount={w.correct_exact}
+                  matchesCount={w.matches_count}
+                  period={`${w.weekLabel} — ${w.dateRange}`}
+                  isHighlighted
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Trophy size={48} className="text-text-muted mx-auto mb-3" />
+            <p className="text-text-muted text-sm">Todavía no hay ganadores. Comienzan con el primer partido.</p>
+          </div>
+        )
       )}
     </div>
   );

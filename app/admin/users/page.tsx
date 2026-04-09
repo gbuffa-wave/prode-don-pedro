@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, FilmSlate, Megaphone, MicrophoneStage, Tree, Moon, Sun, Lighthouse, Compass, Star } from "@phosphor-icons/react";
+import { Check, FilmSlate, Megaphone, MicrophoneStage, Tree, Moon, Sun, Lighthouse, Compass, Star, Trash } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import type { IconProps } from "@phosphor-icons/react";
 
@@ -31,6 +31,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
+  const [deleting, setDeleting] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetch("/api/admin/users")
@@ -52,6 +53,22 @@ export default function AdminUsersPage() {
     setSaving(prev => ({ ...prev, [userId]: false }));
     setSaved(prev => ({ ...prev, [userId]: true }));
     setTimeout(() => setSaved(prev => ({ ...prev, [userId]: false })), 2000);
+  }
+
+  async function handleDelete(userId: string, displayName: string | null) {
+    const name = displayName || userId.slice(0, 8);
+    if (!confirm(`¿Eliminar a ${name}? Se borrarán sus pronósticos y puntajes. Esta acción no se puede deshacer.`)) return;
+
+    setDeleting(prev => ({ ...prev, [userId]: true }));
+
+    await fetch("/api/admin/users", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+
+    setUsers(prev => prev.filter(u => u.id !== userId));
+    setDeleting(prev => ({ ...prev, [userId]: false }));
   }
 
   async function handleRoleChange(userId: string, role: string) {
@@ -96,6 +113,15 @@ export default function AdminUsersPage() {
                   <option value="player">Jugador</option>
                   <option value="admin">Admin</option>
                 </select>
+                {/* Delete button */}
+                <button
+                  onClick={() => handleDelete(user.id, user.display_name)}
+                  disabled={deleting[user.id]}
+                  className="p-1.5 rounded text-red-500/50 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  title="Eliminar usuario"
+                >
+                  <Trash size={14} weight="bold" />
+                </button>
               </div>
 
               {/* Team selector */}

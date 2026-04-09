@@ -31,3 +31,17 @@ export async function PUT(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }
+
+export async function DELETE(request: Request) {
+  const { userId } = await request.json();
+
+  // Delete user's scores, predictions, then the user
+  await supabase.from("scores").delete().eq("user_id", userId);
+  await supabase.from("predictions").delete().eq("user_id", userId);
+  await supabase.from("app_users").delete().eq("id", userId);
+
+  // Also delete from Supabase Auth
+  await supabase.auth.admin.deleteUser(userId);
+
+  return NextResponse.json({ success: true });
+}

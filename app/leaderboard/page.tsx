@@ -2,40 +2,93 @@
 
 import { useState, useMemo, useEffect } from "react";
 import confetti from "canvas-confetti";
+import { createClient } from "@/lib/supabase/client";
 import LeaderboardTable from "@/components/LeaderboardTable";
+import { Trophy } from "@phosphor-icons/react";
 import type { LeaderboardEntry } from "@/lib/types";
 
 const EQUIPOS = ["Waveteam", "Contenidos", "Comunicación", "Eventos", "Bosque", "Luna", "Sol", "Faro", "Dirección", "Estrella"];
 
-const MOCK_LEADERBOARD: (LeaderboardEntry & { equipo: string })[] = Array.from({ length: 30 }, (_, i) => {
-  const equipo = EQUIPOS[1 + (i % (EQUIPOS.length - 1))];
-  return {
-    user_id: `user-${String(i + 1).padStart(3, "0")}`,
-    display_name: i === 4 ? null : `Jugador ${i + 1}`,
-    total_points: Math.max(0, 200 - i * 6),
-    rank: i + 1,
-    correct_exact: Math.max(0, 5 - Math.floor(i / 6)),
-    correct_winner: Math.max(0, 10 - Math.floor(i / 3)),
-    total_predictions: 16,
-    avatar_url: null,
-    equipo,
-  };
-});
-
-const CURRENT_USER_ID = "user-007";
+interface UserWithTeam extends LeaderboardEntry {
+  equipo: string;
+}
 
 export default function LeaderboardPage() {
   const [selectedEquipo, setSelectedEquipo] = useState("Waveteam");
+  const [entries, setEntries] = useState<UserWithTeam[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>();
 
-  const filtered = useMemo(() => {
-    let entries = MOCK_LEADERBOARD;
+  useEffect(() => {
+    const supabase = createClient();
 
-    if (selectedEquipo !== "Waveteam") {
-      entries = entries.filter((e) => e.equipo === selectedEquipo);
+    async function fetchData() {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
+
+      // Fetch all users
+      const { data: users } = await supabase
+        .from("app_users")
+        .select("id, display_name, avatar_url, team");
+
+      // Fetch scores aggregated by user
+      const { data: scores } = await supabase
+        .from("scores")
+        .select("user_id, points_earned");
+
+      // Fetch predictions count by user
+      const { data: predictions } = await supabase
+        .from("predictions")
+        .select("user_id");
+
+      // Aggregate scores by user
+      const scoreMap = new Map<string, number>();
+      (scores || []).forEach((s) => {
+        scoreMap.set(s.user_id, (scoreMap.get(s.user_id) || 0) + s.points_earned);
+      });
+
+      // Count predictions by user
+      const predictionMap = new Map<string, number>();
+      (predictions || []).forEach((p) => {
+        predictionMap.set(p.user_id, (predictionMap.get(p.user_id) || 0) + 1);
+      });
+
+      // Build leaderboard entries
+      const leaderboard: UserWithTeam[] = (users || []).map((u) => ({
+        user_id: u.id,
+        display_name: u.display_name,
+        avatar_url: u.avatar_url,
+        total_points: scoreMap.get(u.id) || 0,
+        rank: 0,
+        correct_exact: 0,
+        correct_winner: 0,
+        total_predictions: predictionMap.get(u.id) || 0,
+        equipo: u.team || "",
+      }));
+
+      // Sort by total_points desc then assign ranks
+      leaderboard.sort((a, b) => b.total_points - a.total_points);
+      leaderboard.forEach((e, i) => {
+        e.rank = i + 1;
+      });
+
+      setEntries(leaderboard);
+      setLoading(false);
     }
 
-    return entries.map((e, i) => ({ ...e, rank: i + 1 }));
-  }, [selectedEquipo]);
+    fetchData();
+  }, []);
+
+  const filtered = useMemo(() => {
+    let list = entries;
+
+    if (selectedEquipo !== "Waveteam") {
+      list = list.filter((e) => e.equipo === selectedEquipo);
+    }
+
+    return list.map((e, i) => ({ ...e, rank: i + 1 }));
+  }, [selectedEquipo, entries]);
 
   useEffect(() => {
     const colors = ["#0c5cac", "#D4A853", "#22C55E", "#F59E0B", "#EF4444", "#ffffff"];
@@ -59,6 +112,16 @@ export default function LeaderboardPage() {
 
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <p className="text-text-muted text-sm">Cargando ranking...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -90,7 +153,18 @@ export default function LeaderboardPage() {
         {selectedEquipo !== "Waveteam" && ` en ${selectedEquipo}`}
       </p>
 
-      <LeaderboardTable entries={filtered} currentUserId={CURRENT_USER_ID} />
+      {filtered.length === 0 ? (
+        <div className="text-center py-12">
+          <Trophy size={48} className="text-text-muted mx-auto mb-3" />
+          <p className="text-text-muted text-sm">
+            {selectedEquipo !== "Waveteam"
+              ? `No hay jugadores en ${selectedEquipo} todavía.`
+              : "Todavía no hay jugadores. El ranking se actualiza con el primer partido."}
+          </p>
+        </div>
+      ) : (
+        <LeaderboardTable entries={filtered} currentUserId={currentUserId} />
+      )}
     </div>
   );
 }
