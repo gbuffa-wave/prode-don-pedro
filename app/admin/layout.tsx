@@ -3,15 +3,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { SoccerBall, Gear, Trophy, ChartBar, ArrowLeft, Crown } from "@phosphor-icons/react";
+import { SoccerBall, Gear, Trophy, ChartBar, ArrowLeft, Crown, Users, EnvelopeSimple } from "@phosphor-icons/react";
 
 const ADMIN_NAV = [
   { href: "/admin", label: "Dashboard", icon: ChartBar },
+  { href: "/admin/users", label: "Usuarios", icon: Users },
   { href: "/admin/matches", label: "Partidos", icon: SoccerBall },
   { href: "/admin/scoring", label: "Puntaje", icon: Gear },
   { href: "/admin/prizes", label: "Premios", icon: Trophy },
   { href: "/admin/winners", label: "Ganadores", icon: Crown },
   { href: "/admin/reports", label: "Reportes", icon: ChartBar },
+  { href: "/admin/notifications", label: "Emails", icon: EnvelopeSimple },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -22,11 +24,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Image
-            src="/logo-prestige.png"
-            alt="Prestige Auto | Mercedes-Benz"
-            width={100}
-            height={28}
-            className="h-6 w-auto object-contain"
+            src="/logo-wave.png"
+            alt="Wave Brands"
+            width={50}
+            height={14}
+            className="h-3 w-auto object-contain"
           />
           <div className="h-5 w-px bg-border" />
           <h1 className="font-sora font-bold text-xl">
