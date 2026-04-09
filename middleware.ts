@@ -26,9 +26,10 @@ export async function middleware(request: NextRequest) {
   const isPublicPage = pathname === "/" || pathname === "/login";
   const isAuthCallback = pathname.startsWith("/auth/");
   const isApi = pathname.startsWith("/api/");
+  const isDemo = pathname.startsWith("/demo");
 
   // Allow public pages, auth callback, and API routes
-  if (isPublicPage || isAuthCallback || isApi) {
+  if (isPublicPage || isAuthCallback || isApi || isDemo) {
     // If logged in and on login page, redirect to fixture
     if (user && pathname === "/login") {
       return NextResponse.redirect(new URL("/fixture", request.url));
