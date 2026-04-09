@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Trophy, SoccerBall, Crown, Star, Medal, Target, Calendar, ListBullets, FunnelSimple, TreeStructure, CaretDown, CaretUp, Check } from "@phosphor-icons/react";
+import { Trophy, SoccerBall, Crown, Star, Medal, Target, Calendar, ListBullets, FunnelSimple, TreeStructure, CaretDown, CaretUp, Check, GearSix, Users, Gear, ChartBar, EnvelopeSimple } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import Countdown from "@/components/Countdown";
@@ -29,7 +29,7 @@ const DEMO_PRIZES = [
   { position: 3, title: "Kit exclusivo", description: "Kit de merchandising premium." },
 ];
 
-type DemoTab = "fixture" | "ranking" | "ganadores" | "premios";
+type DemoTab = "fixture" | "ranking" | "ganadores" | "premios" | "admin";
 
 const PODIUM_STYLES = {
   1: { border: "border-gold", bg: "bg-gold/5", text: "text-gold", size: "h-28", order: "order-2" },
@@ -73,6 +73,7 @@ export default function DemoPage() {
     { key: "ranking", label: "Ranking", icon: Trophy },
     { key: "ganadores", label: "Ganadores", icon: Crown },
     { key: "premios", label: "Premios", icon: Medal },
+    { key: "admin", label: "Admin", icon: GearSix },
   ];
 
   return (
@@ -329,18 +330,89 @@ export default function DemoPage() {
             </div>
           </div>
         )}
+
+        {/* ─── ADMIN ─── */}
+        {tab === "admin" && (
+          <div className="px-4 py-6">
+            <h2 className="font-sora font-bold text-2xl mb-1">Panel Admin</h2>
+            <p className="text-text-secondary text-sm mb-6">Vista previa del panel de administración.</p>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              {[
+                { label: "Usuarios", value: "47", icon: Users, color: "text-teal" },
+                { label: "Pronósticos", value: "1.240", icon: Target, color: "text-gold" },
+                { label: "Jugados", value: "12", icon: SoccerBall, color: "text-success" },
+                { label: "Pendientes", value: "60", icon: Trophy, color: "text-warning" },
+              ].map(s => (
+                <div key={s.label} className="bg-surface border border-border rounded-lg p-3">
+                  <s.icon size={16} className={`${s.color} mb-1`} />
+                  <p className={`font-sora font-bold text-xl ${s.color}`}>{s.value}</p>
+                  <p className="text-[10px] text-text-muted">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Admin sections preview */}
+            <div className="space-y-3">
+              {[
+                { icon: Users, label: "Usuarios y Equipos", desc: "Gestionar usuarios, asignar equipos y roles" },
+                { icon: SoccerBall, label: "Partidos", desc: "Cargar resultados y sincronizar con API en vivo" },
+                { icon: Gear, label: "Puntaje", desc: "Configurar puntos por resultado exacto, ganador, campeón" },
+                { icon: Trophy, label: "Premios", desc: "Administrar premios con imágenes" },
+                { icon: Crown, label: "Ganadores", desc: "Ver ganadores diarios y semanales automáticos" },
+                { icon: ChartBar, label: "Reportes", desc: "Exportar rankings y estadísticas a Excel" },
+                { icon: EnvelopeSimple, label: "Emails", desc: "Enviar recordatorios personalizados con diseño HTML" },
+              ].map(s => (
+                <div key={s.label} className="bg-surface border border-border rounded-lg p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-teal/10 flex items-center justify-center flex-shrink-0">
+                    <s.icon size={18} className="text-teal" />
+                  </div>
+                  <div>
+                    <p className="font-grotesk font-semibold text-sm text-text-primary">{s.label}</p>
+                    <p className="text-[10px] text-text-muted">{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Email preview */}
+            <div className="mt-6">
+              <p className="font-grotesk font-semibold text-xs text-text-muted uppercase tracking-wider mb-3">Preview de email de recordatorio</p>
+              <div className="bg-[#0A1020] border border-border rounded-lg overflow-hidden">
+                <div className="p-4 text-center border-b border-border/50">
+                  <p className="text-[10px] text-text-muted mb-2">wave.brands</p>
+                  <p className="font-sora font-bold text-sm"><span className="text-text-primary">Prode</span> <span className="text-teal">2026</span></p>
+                  <p className="text-[20px] mt-1">🏆</p>
+                </div>
+                <div className="p-4">
+                  <p className="text-text-primary text-sm font-semibold mb-1">¡Hola María!</p>
+                  <p className="text-text-secondary text-xs mb-3">Tenés <span className="text-teal font-bold">3 partidos</span> sin pronosticar:</p>
+                  <div className="space-y-1.5">
+                    {["México vs Sudáfrica", "Argentina vs Argelia", "Brasil vs Marruecos"].map(m => (
+                      <div key={m} className="bg-surface-raised rounded p-2 text-xs text-text-primary">{m}</div>
+                    ))}
+                  </div>
+                  <div className="text-center mt-4">
+                    <span className="inline-block bg-teal text-bg text-xs font-semibold px-6 py-2 rounded">⚽ Cargar pronósticos</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Demo footer CTA */}
-      <div className="bg-surface border-t border-border px-4 py-6 text-center">
-        <p className="font-sora font-bold text-lg text-text-primary mb-2">¿Te interesa para tu empresa?</p>
-        <p className="text-text-secondary text-sm mb-4">Personalizamos la plataforma con tu marca y equipos internos.</p>
-        <a
-          href="mailto:gbuffa@wavebrands.com?subject=Consulta%20Prode%20Mundial%202026"
-          className="inline-block bg-teal text-bg font-semibold text-sm px-8 py-3 rounded hover:bg-teal-dim transition-colors"
-        >
-          Contactanos
-        </a>
+      <div className="bg-surface border-t border-border px-4 py-6 text-center mt-8">
+          <p className="font-sora font-bold text-lg text-text-primary mb-2">¿Te interesa para tu empresa?</p>
+          <p className="text-text-secondary text-sm mb-4">Personalizamos la plataforma con tu marca y equipos internos.</p>
+          <a
+            href="mailto:gbuffa@wavebrands.com?subject=Consulta%20Prode%20Mundial%202026"
+            className="inline-block bg-teal text-bg font-semibold text-sm px-8 py-3 rounded hover:bg-teal-dim transition-colors"
+          >
+            Contactanos
+          </a>
       </div>
     </div>
   );
