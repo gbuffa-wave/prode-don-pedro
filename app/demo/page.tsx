@@ -592,30 +592,57 @@ export default function DemoPage() {
                 Preview de email de recordatorio
               </p>
               <div className="bg-[#0A1020] border border-border rounded-lg overflow-hidden">
-                <div className="p-4 text-center border-b border-border/50">
-                  <p className="text-[10px] text-text-muted mb-2">wave.brands</p>
-                  <p className="font-sora font-bold text-sm">
+                {/* Header */}
+                <div className="p-5 text-center border-b-2 border-teal" style={{ backgroundColor: "#0A1020" }}>
+                  <img src="/logo-wave.png" alt="" className="h-[14px] w-auto mx-auto mb-3 opacity-80" />
+                  <p className="font-sora font-bold text-lg">
                     <span className="text-text-primary">Prode</span>{" "}
                     <span className="text-teal">2026</span>
                   </p>
+                  <img src="/copa-mundial.png" alt="" className="h-[50px] w-auto mx-auto my-3" />
+                  <p className="text-text-muted text-[10px] uppercase tracking-widest">Mundial FIFA 2026</p>
                 </div>
-                <div className="p-4">
-                  <p className="text-text-primary text-sm font-semibold mb-1">Hola Maria!</p>
-                  <p className="text-text-secondary text-xs mb-3">
-                    Tenes <span className="text-teal font-bold">3 partidos</span> sin pronosticar:
+                {/* Body */}
+                <div className="p-4" style={{ backgroundColor: "#0A0A0A" }}>
+                  <p className="text-text-primary text-base font-bold mb-1">¡Hola María!</p>
+                  <p className="text-text-secondary text-sm mb-4">
+                    Tenés <span className="text-teal font-bold">3 partidos</span> sin pronosticar. ¡No te quedes afuera!
                   </p>
-                  <div className="space-y-1.5">
-                    {["Mexico vs Sudafrica", "Argentina vs Argelia", "Brasil vs Marruecos"].map((m) => (
-                      <div key={m} className="bg-surface-raised rounded p-2 text-xs text-text-primary">
-                        {m}
+                  {/* Match cards with flags */}
+                  {[
+                    { home: "México", hCode: "mx", away: "Sudáfrica", aCode: "za", group: "A", date: "Jue 11 Jun, 14:00" },
+                    { home: "Argentina", hCode: "ar", away: "Argelia", aCode: "dz", group: "J", date: "Lun 16 Jun, 22:00" },
+                    { home: "Brasil", hCode: "br", away: "Marruecos", aCode: "ma", group: "C", date: "Vie 13 Jun, 19:00" },
+                  ].map((m) => (
+                    <div key={m.home} className="bg-surface-raised rounded-lg p-3 mb-2">
+                      <p className="text-text-muted text-[9px] uppercase tracking-wider mb-2">
+                        Grupo {m.group} — {m.date}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 flex-1 justify-end pr-2">
+                          <span className="text-text-primary text-xs font-semibold">{m.home}</span>
+                          <img src={`https://flagcdn.com/w40/${m.hCode}.png`} alt="" className="w-5 h-3 rounded-sm object-cover" />
+                        </div>
+                        <span className="text-text-muted text-[10px] font-bold px-2">vs</span>
+                        <div className="flex items-center gap-2 flex-1 pl-2">
+                          <img src={`https://flagcdn.com/w40/${m.aCode}.png`} alt="" className="w-5 h-3 rounded-sm object-cover" />
+                          <span className="text-text-primary text-xs font-semibold">{m.away}</span>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                  <div className="text-center mt-4">
-                    <span className="inline-block bg-teal text-bg text-xs font-semibold px-6 py-2 rounded">
-                      Cargar pronosticos
+                    </div>
+                  ))}
+                  <div className="text-center mt-5 mb-2">
+                    <span className="inline-block bg-teal text-white text-xs font-bold px-8 py-2.5 rounded-lg">
+                      ⚽ Cargar pronósticos
                     </span>
                   </div>
+                  <p className="text-text-muted text-[10px] text-center mt-3">
+                    Si ya cargaste todos, ignorá este email.
+                  </p>
+                </div>
+                {/* Footer */}
+                <div className="p-3 text-center border-t border-border">
+                  <p className="text-[9px] text-text-muted uppercase tracking-wider">Prode Mundial 2026 — Wave Brands</p>
                 </div>
               </div>
             </div>
