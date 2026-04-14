@@ -36,7 +36,7 @@ function ChannelLogos({ channels }: { channels: string }) {
             src={logo.src}
             alt={channel}
             title={channel}
-            className={`${logo.height} w-auto object-contain brightness-0 invert opacity-70`}
+            className={`${logo.height} w-auto object-contain`}
           />
         );
       })}
