@@ -18,6 +18,7 @@ export interface Match {
   group_label: string | null;
   match_date: string;
   venue: string | null;
+  tv_channel: string | null;
   status: MatchStatus;
   home_score: number | null;
   away_score: number | null;

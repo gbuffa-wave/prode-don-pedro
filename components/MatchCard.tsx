@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, MapPin } from "@phosphor-icons/react";
+import { Clock, MapPin, TelevisionSimple } from "@phosphor-icons/react";
 import CountdownTimer from "./CountdownTimer";
 import PredictionForm from "./PredictionForm";
 import type { Match, Prediction } from "@/lib/types";
@@ -89,25 +89,33 @@ export default function MatchCard({ match, prediction, onPredict }: Props) {
         </div>
       )}
 
-      {/* Time and venue */}
-      <div className="flex items-center justify-center gap-2 text-xs text-text-secondary border-t border-border pt-2">
-        <span className="flex items-center gap-1 font-medium">
-          <Clock size={13} weight="bold" />
-          {new Date(match.match_date).toLocaleTimeString("es-AR", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "America/Argentina/Buenos_Aires",
-          })}{" "}
-          hs
-        </span>
-        {match.venue && (
-          <>
-            <span className="text-border">·</span>
-            <span className="flex items-center gap-1 truncate max-w-[180px]">
-              <MapPin size={13} weight="bold" className="flex-shrink-0" />
-              <span className="truncate font-medium">{match.venue}</span>
-            </span>
-          </>
+      {/* Time, venue and TV */}
+      <div className="border-t border-border pt-2 space-y-1.5">
+        <div className="flex items-center justify-center gap-2 text-xs text-text-secondary">
+          <span className="flex items-center gap-1 font-medium">
+            <Clock size={13} weight="bold" />
+            {new Date(match.match_date).toLocaleTimeString("es-AR", {
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "America/Argentina/Buenos_Aires",
+            })}{" "}
+            hs
+          </span>
+          {match.venue && (
+            <>
+              <span className="text-border">·</span>
+              <span className="flex items-center gap-1 min-w-0">
+                <MapPin size={13} weight="bold" className="flex-shrink-0" />
+                <span className="truncate font-medium">{match.venue}</span>
+              </span>
+            </>
+          )}
+        </div>
+        {match.tv_channel && (
+          <div className="flex items-center justify-center gap-1.5 text-xs text-teal font-medium">
+            <TelevisionSimple size={13} weight="bold" />
+            {match.tv_channel}
+          </div>
         )}
       </div>
     </div>
