@@ -16,8 +16,8 @@ interface Props {
   onPredict: (matchId: number, homeScore: number, awayScore: number) => void;
 }
 
-const CHANNEL_LOGOS: Record<string, { src: string; height: string }> = {
-  "Telefe":      { src: "/logos/telefe.svg",    height: "h-5" },
+const CHANNEL_LOGOS: Record<string, { src: string; height: string; wrap?: string }> = {
+  "Telefe":      { src: "/logos/telefe.svg",    height: "h-4", wrap: "bg-white rounded px-1.5 py-0.5" },
   "TV Pública":  { src: "/logos/tvpublica.svg", height: "h-5" },
   "DSports":     { src: "/logos/dsports.png",   height: "h-4" },
   "DirecTV Go":  { src: "/logos/dgo.svg",       height: "h-4" },
@@ -31,13 +31,14 @@ function ChannelLogos({ channels }: { channels: string }) {
         const logo = CHANNEL_LOGOS[channel];
         if (!logo) return null;
         return (
-          <img
-            key={channel}
-            src={logo.src}
-            alt={channel}
-            title={channel}
-            className={`${logo.height} w-auto object-contain`}
-          />
+          <span key={channel} className={logo.wrap ?? ""}>
+            <img
+              src={logo.src}
+              alt={channel}
+              title={channel}
+              className={`${logo.height} w-auto object-contain`}
+            />
+          </span>
         );
       })}
     </div>
