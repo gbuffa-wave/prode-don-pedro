@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, MapPin, TelevisionSimple } from "@phosphor-icons/react";
+import { Clock, MapPin } from "@phosphor-icons/react";
 import CountdownTimer from "./CountdownTimer";
 import PredictionForm from "./PredictionForm";
 import type { Match, Prediction } from "@/lib/types";
@@ -14,6 +14,34 @@ interface Props {
   match: MatchWithTeams;
   prediction?: Prediction;
   onPredict: (matchId: number, homeScore: number, awayScore: number) => void;
+}
+
+const CHANNEL_LOGOS: Record<string, { src: string; height: string }> = {
+  "Telefe":      { src: "/logos/telefe.svg",    height: "h-5" },
+  "TV Pública":  { src: "/logos/tvpublica.svg", height: "h-5" },
+  "DSports":     { src: "/logos/dsports.png",   height: "h-4" },
+  "DirecTV Go":  { src: "/logos/dgo.svg",       height: "h-4" },
+};
+
+function ChannelLogos({ channels }: { channels: string }) {
+  const list = channels.split(" · ").map((c) => c.trim());
+  return (
+    <div className="flex items-center justify-center gap-3">
+      {list.map((channel) => {
+        const logo = CHANNEL_LOGOS[channel];
+        if (!logo) return null;
+        return (
+          <img
+            key={channel}
+            src={logo.src}
+            alt={channel}
+            title={channel}
+            className={`${logo.height} w-auto object-contain brightness-0 invert opacity-70`}
+          />
+        );
+      })}
+    </div>
+  );
 }
 
 export default function MatchCard({ match, prediction, onPredict }: Props) {
@@ -90,7 +118,7 @@ export default function MatchCard({ match, prediction, onPredict }: Props) {
       )}
 
       {/* Time, venue and TV */}
-      <div className="border-t border-border pt-2 space-y-1.5">
+      <div className="border-t border-border pt-2 space-y-2">
         <div className="flex items-center justify-center gap-2 text-xs text-text-secondary">
           <span className="flex items-center gap-1 font-medium">
             <Clock size={13} weight="bold" />
@@ -111,12 +139,7 @@ export default function MatchCard({ match, prediction, onPredict }: Props) {
             </>
           )}
         </div>
-        {match.tv_channel && (
-          <div className="flex items-center justify-center gap-1.5 text-xs text-teal font-medium">
-            <TelevisionSimple size={13} weight="bold" />
-            {match.tv_channel}
-          </div>
-        )}
+        {match.tv_channel && <ChannelLogos channels={match.tv_channel} />}
       </div>
     </div>
   );
