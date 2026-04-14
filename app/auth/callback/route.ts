@@ -3,9 +3,19 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
+const ALLOWED_ORIGINS = [
+  "https://prode.wavebrands.com",
+  "http://localhost:3000",
+];
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+
+  // Validate origin against allowlist to prevent open redirect
+  const safeOrigin = ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : "https://prode.wavebrands.com";
 
   if (code) {
     const cookieStore = await cookies();
@@ -48,7 +58,7 @@ export async function GET(request: Request) {
           avatar_url: data.user.user_metadata?.avatar_url || null,
         });
         // New user → onboarding to pick team
-        return NextResponse.redirect(`${origin}/onboarding`);
+        return NextResponse.redirect(`${safeOrigin}/onboarding`);
       } else {
         // Update existing user's avatar and name (might have changed)
         await adminSupabase.from("app_users")
@@ -66,13 +76,13 @@ export async function GET(request: Request) {
           .single();
 
         if (!userData?.team) {
-          return NextResponse.redirect(`${origin}/onboarding`);
+          return NextResponse.redirect(`${safeOrigin}/onboarding`);
         }
       }
 
-      return NextResponse.redirect(`${origin}/fixture`);
+      return NextResponse.redirect(`${safeOrigin}/fixture`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  return NextResponse.redirect(`${safeOrigin}/login?error=auth`);
 }

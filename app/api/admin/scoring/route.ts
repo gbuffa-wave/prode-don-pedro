@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/require-admin";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -6,6 +7,9 @@ const supabase = createClient(
 );
 
 export async function PUT(request: Request) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   const { rules } = await request.json();
 
   for (const rule of rules) {

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { calculateMatchScores } from "@/lib/scoring";
+import { requireAdmin } from "@/lib/require-admin";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +8,9 @@ const supabase = createClient(
 );
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   const { matchId, homeScore, awayScore } = await request.json();
 
   const { error } = await supabase

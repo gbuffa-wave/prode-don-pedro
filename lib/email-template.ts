@@ -7,6 +7,15 @@ interface PendingMatch {
   group: string;
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function flagUrl(code: string): string {
   const codeMap: Record<string, string> = {
     USA: "us", ARG: "ar", BRA: "br", MEX: "mx", CAN: "ca",
@@ -28,33 +37,45 @@ function flagUrl(code: string): string {
 }
 
 export function buildReminderEmail(userName: string, pendingMatches: PendingMatch[]): string {
-  const matchRows = pendingMatches.map(m => `
+  const safeUserName = escapeHtml(userName);
+  const matchCount = pendingMatches.length;
+
+  const matchRows = pendingMatches.map(m => {
+    const homeTeam = escapeHtml(m.homeTeam);
+    const awayTeam = escapeHtml(m.awayTeam);
+    const homeCode = escapeHtml(m.homeCode);
+    const awayCode = escapeHtml(m.awayCode);
+    const matchDate = escapeHtml(m.matchDate);
+    const group = escapeHtml(m.group);
+
+    return `
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#1A1A1A;border-radius:8px;margin-bottom:8px;">
       <tr>
         <td style="padding:8px 12px;">
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr>
               <td colspan="3" style="padding-bottom:6px;color:#666666;font-size:10px;text-transform:uppercase;letter-spacing:1px;">
-                Grupo ${m.group} &mdash; ${m.matchDate}
+                Grupo ${group} &mdash; ${matchDate}
               </td>
             </tr>
             <tr>
               <td width="40%" align="right" style="padding-right:6px;">
-                <span style="color:#F5F5F5;font-size:13px;font-weight:600;">${m.homeTeam}</span>
-                &nbsp;<img src="${flagUrl(m.homeCode)}" alt="${m.homeCode}" width="22" height="14" style="vertical-align:middle;border-radius:2px;" />
+                <span style="color:#F5F5F5;font-size:13px;font-weight:600;">${homeTeam}</span>
+                &nbsp;<img src="${flagUrl(m.homeCode)}" alt="${homeCode}" width="22" height="14" style="vertical-align:middle;border-radius:2px;" />
               </td>
               <td width="20%" align="center">
                 <span style="color:#666666;font-size:11px;font-weight:700;">vs</span>
               </td>
               <td width="40%" align="left" style="padding-left:6px;">
-                <img src="${flagUrl(m.awayCode)}" alt="${m.awayCode}" width="22" height="14" style="vertical-align:middle;border-radius:2px;" />&nbsp;
-                <span style="color:#F5F5F5;font-size:13px;font-weight:600;">${m.awayTeam}</span>
+                <img src="${flagUrl(m.awayCode)}" alt="${awayCode}" width="22" height="14" style="vertical-align:middle;border-radius:2px;" />&nbsp;
+                <span style="color:#F5F5F5;font-size:13px;font-weight:600;">${awayTeam}</span>
               </td>
             </tr>
           </table>
         </td>
       </tr>
-    </table>`).join("");
+    </table>`;
+  }).join("");
 
   return `<!DOCTYPE html>
 <html>
@@ -86,9 +107,9 @@ export function buildReminderEmail(userName: string, pendingMatches: PendingMatc
           <!-- Body -->
           <tr>
             <td style="background-color:#0A0A0A;padding:24px 20px;">
-              <p style="color:#F5F5F5;font-size:18px;font-weight:700;margin:0 0 4px;">¡Hola ${userName}!</p>
+              <p style="color:#F5F5F5;font-size:18px;font-weight:700;margin:0 0 4px;">¡Hola ${safeUserName}!</p>
               <p style="color:#A0A0A0;font-size:14px;margin:0 0 24px;line-height:1.5;">
-                Tenés <span style="color:#0c5cac;font-weight:700;">${pendingMatches.length} partido${pendingMatches.length !== 1 ? "s" : ""}</span> sin pronosticar. ¡No te quedes afuera!
+                Tenés <span style="color:#0c5cac;font-weight:700;">${matchCount} partido${matchCount !== 1 ? "s" : ""}</span> sin pronosticar. ¡No te quedes afuera!
               </p>
 
               <!-- Match cards -->

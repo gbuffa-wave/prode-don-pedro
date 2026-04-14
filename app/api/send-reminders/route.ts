@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { buildReminderEmail } from "@/lib/email-template";
+import { requireAdmin } from "@/lib/require-admin";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,6 +10,9 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   try {
     const body = await request.json().catch(() => ({}));
     const isTest = body.test === true;

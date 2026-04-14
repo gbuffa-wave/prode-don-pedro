@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { calculateMatchScores } from "@/lib/scoring";
+import { requireCronOrAdmin } from "@/lib/require-admin";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,15 +26,8 @@ function mapStatus(apiStatus: string): string {
 }
 
 export async function GET(request: Request) {
-  // Verify: allow Vercel cron (with secret) or manual trigger (no auth needed for GET)
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  const isVercelCron = authHeader === `Bearer ${cronSecret}`;
-  const isManualTrigger = request.headers.get("referer")?.includes("/admin");
-  // Allow both cron and manual triggers
-  if (cronSecret && !isVercelCron && !isManualTrigger) {
-    // Still allow without auth header (manual fetch from browser)
-  }
+  const authError = await requireCronOrAdmin(request);
+  if (authError) return authError;
 
   try {
     const apiKey = process.env.FOOTBALL_DATA_API_KEY;
@@ -149,7 +143,6 @@ export async function GET(request: Request) {
         } else if (finalMatch.away_score > finalMatch.home_score) {
           championCode = fAway;
         }
-        // Note: penalties not handled here, would need extra logic
 
         if (championCode) {
           // Check if champion already set

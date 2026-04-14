@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/require-admin";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +8,9 @@ const supabase = createClient(
 );
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   const { data, error } = await supabase
     .from("app_users")
     .select("id, display_name, avatar_url, role, team, created_at")
@@ -17,6 +21,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   const { userId, team, role } = await request.json();
 
   const update: Record<string, string> = {};
@@ -33,6 +40,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   const { userId } = await request.json();
 
   // Delete user's scores, predictions, then the user

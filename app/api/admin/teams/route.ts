@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/require-admin";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +8,9 @@ const supabase = createClient(
 );
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   const { data, error } = await supabase
     .from("internal_teams")
     .select("*")
@@ -17,6 +21,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   const { name, icon } = await request.json();
   if (!name) return NextResponse.json({ error: "Name required" }, { status: 400 });
 
@@ -29,6 +36,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   const { id, name, icon } = await request.json();
 
   const { error } = await supabase
@@ -41,6 +51,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   const { id } = await request.json();
 
   // Clear team from users who had this team

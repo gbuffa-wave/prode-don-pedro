@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/require-admin";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +8,9 @@ const supabase = createClient(
 );
 
 export async function POST() {
+  const auth = await requireAdmin();
+  if ("error" in auth) return auth.error;
+
   // Delete in order (foreign keys)
   await supabase.from("scores").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await supabase.from("predictions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
