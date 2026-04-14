@@ -90,9 +90,9 @@ export default function MatchCard({ match, prediction, onPredict }: Props) {
       )}
 
       {/* Time and venue */}
-      <div className="flex items-center justify-center gap-2 text-[11px] text-text-muted border-t border-border pt-2">
-        <span className="flex items-center gap-1">
-          <Clock size={11} />
+      <div className="flex items-center justify-center gap-2 text-xs text-text-secondary border-t border-border pt-2">
+        <span className="flex items-center gap-1 font-medium">
+          <Clock size={13} weight="bold" />
           {new Date(match.match_date).toLocaleTimeString("es-AR", {
             hour: "2-digit",
             minute: "2-digit",
@@ -103,9 +103,9 @@ export default function MatchCard({ match, prediction, onPredict }: Props) {
         {match.venue && (
           <>
             <span className="text-border">·</span>
-            <span className="flex items-center gap-1 truncate max-w-[160px]">
-              <MapPin size={11} className="flex-shrink-0" />
-              <span className="truncate">{match.venue}</span>
+            <span className="flex items-center gap-1 truncate max-w-[180px]">
+              <MapPin size={13} weight="bold" className="flex-shrink-0" />
+              <span className="truncate font-medium">{match.venue}</span>
             </span>
           </>
         )}
