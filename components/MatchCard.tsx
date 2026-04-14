@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock, MapPin } from "@phosphor-icons/react";
 import CountdownTimer from "./CountdownTimer";
 import PredictionForm from "./PredictionForm";
 import type { Match, Prediction } from "@/lib/types";
@@ -87,6 +88,28 @@ export default function MatchCard({ match, prediction, onPredict }: Props) {
           <span className="text-xs text-text-muted">Tu pronostico: {prediction.home_score} - {prediction.away_score}</span>
         </div>
       )}
+
+      {/* Time and venue */}
+      <div className="flex items-center justify-center gap-2 text-[11px] text-text-muted border-t border-border pt-2">
+        <span className="flex items-center gap-1">
+          <Clock size={11} />
+          {new Date(match.match_date).toLocaleTimeString("es-AR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "America/Argentina/Buenos_Aires",
+          })}{" "}
+          hs
+        </span>
+        {match.venue && (
+          <>
+            <span className="text-border">·</span>
+            <span className="flex items-center gap-1 truncate max-w-[160px]">
+              <MapPin size={11} className="flex-shrink-0" />
+              <span className="truncate">{match.venue}</span>
+            </span>
+          </>
+        )}
+      </div>
     </div>
   );
 }

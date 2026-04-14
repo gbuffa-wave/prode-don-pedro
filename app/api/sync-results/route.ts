@@ -63,7 +63,7 @@ export async function GET(request: Request) {
     const { data: ourMatches } = await supabase
       .from("matches")
       .select(
-        "id, home_team_id, away_team_id, status, home_score, away_score, match_date, home_team:teams!home_team_id(code), away_team:teams!away_team_id(code)"
+        "id, home_team_id, away_team_id, status, home_score, away_score, match_date, venue, home_team:teams!home_team_id(code), away_team:teams!away_team_id(code)"
       );
 
     if (!ourMatches) {
@@ -81,6 +81,7 @@ export async function GET(request: Request) {
       const awayCode = apiMatch.awayTeam?.tla;
       const homeScore = apiMatch.score?.fullTime?.home ?? null;
       const awayScore = apiMatch.score?.fullTime?.away ?? null;
+      const venue = apiMatch.venue ?? null;
 
       if (!homeCode || !awayCode) continue;
 
@@ -97,7 +98,8 @@ export async function GET(request: Request) {
       const needsUpdate =
         ourMatch.status !== newStatus ||
         ourMatch.home_score !== homeScore ||
-        ourMatch.away_score !== awayScore;
+        ourMatch.away_score !== awayScore ||
+        (venue && ourMatch.venue !== venue);
 
       if (!needsUpdate) continue;
 
@@ -105,6 +107,7 @@ export async function GET(request: Request) {
       const updateData: any = { status: newStatus };
       if (homeScore !== null) updateData.home_score = homeScore;
       if (awayScore !== null) updateData.away_score = awayScore;
+      if (venue) updateData.venue = venue;
 
       await supabase.from("matches").update(updateData).eq("id", ourMatch.id);
 
