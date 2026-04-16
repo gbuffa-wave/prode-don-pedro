@@ -3,10 +3,13 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { getFlagUrl } from "@/lib/fixture-data";
+import { createClient } from "@/lib/supabase/client";
+
+type BracketRound = "octavos" | "cuartos" | "semi" | "final" | "tercero";
 
 interface BracketMatch {
   id: number;
-  round: string;
+  round: BracketRound;
   position: number;
   side: "left" | "right";
   home: { name: string; code: string } | null;
@@ -16,32 +19,96 @@ interface BracketMatch {
   status: "scheduled" | "in_progress" | "finished";
 }
 
-const INITIAL_KNOCKOUT: BracketMatch[] = [
+// Esqueleto vacío: los equipos se llenan cuando sync-results
+// crea los matches knockout en DB (stage = round_of_16/quarter/semi/final/third).
+// Hasta entonces, muestra todos los slots como TBD.
+const EMPTY_BRACKET: BracketMatch[] = [
   // LEFT — Octavos
-  { id: 101, round: "octavos", position: 1, side: "left", home: { name: "Estados Unidos", code: "USA" }, away: { name: "Colombia", code: "COL" }, home_score: null, away_score: null, status: "scheduled" },
-  { id: 102, round: "octavos", position: 2, side: "left", home: { name: "Argentina", code: "ARG" }, away: { name: "Japon", code: "JPN" }, home_score: null, away_score: null, status: "scheduled" },
-  { id: 103, round: "octavos", position: 3, side: "left", home: { name: "Francia", code: "FRA" }, away: { name: "Corea del Sur", code: "KOR" }, home_score: null, away_score: null, status: "scheduled" },
-  { id: 104, round: "octavos", position: 4, side: "left", home: { name: "Brasil", code: "BRA" }, away: { name: "Senegal", code: "SEN" }, home_score: null, away_score: null, status: "scheduled" },
+  { id: -101, round: "octavos", position: 1, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -102, round: "octavos", position: 2, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -103, round: "octavos", position: 3, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -104, round: "octavos", position: 4, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
   // RIGHT — Octavos
-  { id: 105, round: "octavos", position: 1, side: "right", home: { name: "Alemania", code: "GER" }, away: { name: "Marruecos", code: "MAR" }, home_score: null, away_score: null, status: "scheduled" },
-  { id: 106, round: "octavos", position: 2, side: "right", home: { name: "Espana", code: "ESP" }, away: { name: "Chile", code: "CHI" }, home_score: null, away_score: null, status: "scheduled" },
-  { id: 107, round: "octavos", position: 3, side: "right", home: { name: "Inglaterra", code: "ENG" }, away: { name: "Uruguay", code: "URU" }, home_score: null, away_score: null, status: "scheduled" },
-  { id: 108, round: "octavos", position: 4, side: "right", home: { name: "Portugal", code: "POR" }, away: { name: "Croacia", code: "CRO" }, home_score: null, away_score: null, status: "scheduled" },
+  { id: -105, round: "octavos", position: 1, side: "right", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -106, round: "octavos", position: 2, side: "right", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -107, round: "octavos", position: 3, side: "right", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -108, round: "octavos", position: 4, side: "right", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
   // LEFT — Cuartos
-  { id: 201, round: "cuartos", position: 1, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
-  { id: 202, round: "cuartos", position: 2, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -201, round: "cuartos", position: 1, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -202, round: "cuartos", position: 2, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
   // RIGHT — Cuartos
-  { id: 203, round: "cuartos", position: 1, side: "right", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
-  { id: 204, round: "cuartos", position: 2, side: "right", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
-  // LEFT — Semi
-  { id: 301, round: "semi", position: 1, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
-  // RIGHT — Semi
-  { id: 302, round: "semi", position: 1, side: "right", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -203, round: "cuartos", position: 1, side: "right", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -204, round: "cuartos", position: 2, side: "right", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  // Semi
+  { id: -301, round: "semi", position: 1, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -302, round: "semi", position: 1, side: "right", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
   // Final
-  { id: 401, round: "final", position: 1, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -401, round: "final", position: 1, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
   // 3rd place
-  { id: 402, round: "tercero", position: 1, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
+  { id: -402, round: "tercero", position: 1, side: "left", home: null, away: null, home_score: null, away_score: null, status: "scheduled" },
 ];
+
+const STAGE_TO_ROUND: Record<string, BracketRound> = {
+  round_of_16: "octavos",
+  quarter: "cuartos",
+  semi: "semi",
+  final: "final",
+  third: "tercero",
+};
+
+const SLOTS_PER_ROUND_SIDE: Record<BracketRound, number> = {
+  octavos: 4,
+  cuartos: 2,
+  semi: 1,
+  final: 1,
+  tercero: 1,
+};
+
+type KnockoutMatchRow = {
+  id: number;
+  stage: string;
+  status: "scheduled" | "in_progress" | "finished";
+  home_score: number | null;
+  away_score: number | null;
+  match_date: string;
+  home_team: { name: string; code: string } | null;
+  away_team: { name: string; code: string } | null;
+};
+
+function mergeKnockouts(rows: KnockoutMatchRow[]): BracketMatch[] {
+  const base: BracketMatch[] = EMPTY_BRACKET.map((m) => ({ ...m }));
+  const byRound = new Map<BracketRound, KnockoutMatchRow[]>();
+  for (const r of rows) {
+    const round = STAGE_TO_ROUND[r.stage];
+    if (!round) continue;
+    const list = byRound.get(round) ?? [];
+    list.push(r);
+    byRound.set(round, list);
+  }
+
+  for (const [round, list] of byRound) {
+    list.sort((a, b) => a.match_date.localeCompare(b.match_date) || a.id - b.id);
+    const perSide = SLOTS_PER_ROUND_SIDE[round];
+    list.forEach((row, i) => {
+      const side: "left" | "right" = round === "final" || round === "tercero"
+        ? "left"
+        : i < perSide ? "left" : "right";
+      const position = (i % perSide) + 1;
+      const slot = base.find(
+        (s) => s.round === round && s.side === side && s.position === position
+      );
+      if (!slot) return;
+      slot.id = row.id;
+      slot.status = row.status;
+      slot.home_score = row.home_score;
+      slot.away_score = row.away_score;
+      slot.home = row.home_team;
+      slot.away = row.away_team;
+    });
+  }
+
+  return base;
+}
 
 // ─── Team Badge: flag rectangle + name below ───
 function TeamBadge({ team, score, isWinner }: {
@@ -312,21 +379,35 @@ function MobileBracket({ matches, champion }: { matches: BracketMatch[]; champio
 // ─── Main Export ───
 export default function BracketView() {
   const [champion, setChampion] = useState<{ name: string; code: string } | null>(null);
+  const [matches, setMatches] = useState<BracketMatch[]>(EMPTY_BRACKET);
 
   useEffect(() => {
     fetch("/api/admin/champion")
       .then(res => res.json())
       .then(data => setChampion(data.champion))
       .catch(() => {});
+
+    const supabase = createClient();
+    supabase
+      .from("matches")
+      .select(
+        "id, stage, status, home_score, away_score, match_date, home_team:teams!home_team_id(name,code), away_team:teams!away_team_id(name,code)"
+      )
+      .in("stage", ["round_of_16", "quarter", "semi", "final", "third"])
+      .order("match_date")
+      .returns<KnockoutMatchRow[]>()
+      .then(({ data }) => {
+        if (data && data.length > 0) setMatches(mergeKnockouts(data));
+      });
   }, []);
 
   return (
     <div>
       <div className="md:hidden">
-        <MobileBracket matches={INITIAL_KNOCKOUT} champion={champion} />
+        <MobileBracket matches={matches} champion={champion} />
       </div>
       <div className="hidden md:block">
-        <DesktopBracket matches={INITIAL_KNOCKOUT} champion={champion} />
+        <DesktopBracket matches={matches} champion={champion} />
       </div>
     </div>
   );

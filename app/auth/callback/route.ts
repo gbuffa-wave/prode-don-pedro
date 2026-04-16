@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 const ALLOWED_ORIGINS = [
   "https://prode.wavebrands.com",
@@ -37,12 +37,7 @@ export async function GET(request: Request) {
     const { error, data } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.user) {
-      // Ensure user exists in app_users table
-      const adminSupabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-
+      const adminSupabase = getAdminClient();
       const { data: existingUser } = await adminSupabase
         .from("app_users")
         .select("id")

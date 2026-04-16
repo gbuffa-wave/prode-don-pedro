@@ -1,18 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/require-admin";
+import { adminPrizesBodySchema, parseBody } from "@/lib/schemas";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getAdminClient();
 
 export async function PUT(request: Request) {
   const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
 
-  const { prizes } = await request.json();
+  const parsed = await parseBody(request, adminPrizesBodySchema);
+  if ("error" in parsed) return parsed.error;
+  const { prizes } = parsed.data;
 
-  // Delete all existing prizes and re-insert
   const { error: deleteError } = await supabase
     .from("prizes")
     .delete()
@@ -23,7 +22,7 @@ export async function PUT(request: Request) {
   }
 
   if (prizes.length > 0) {
-    const toInsert = prizes.map((p: any, i: number) => ({
+    const toInsert = prizes.map((p, i) => ({
       position: i + 1,
       title: p.title,
       description: p.description || null,

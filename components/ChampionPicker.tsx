@@ -17,6 +17,7 @@ export default function ChampionPicker({ teams }: Props) {
   const [confirmed, setConfirmed] = useState(false);
   const [open, setOpen] = useState(false);
   const [championPoints, setChampionPoints] = useState(50);
+  const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -24,7 +25,20 @@ export default function ChampionPicker({ teams }: Props) {
     supabase.from("scoring_rules").select("points").eq("rule_type", "champion").eq("is_active", true).single().then(({ data }) => {
       if (data) setChampionPoints(data.points);
     });
-  }, []);
+
+    // Hidratar elección previa del servidor
+    fetch("/api/champion")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { champion_code: string | null; locked: boolean } | null) => {
+        if (!data?.champion_code) return;
+        const picked = teams.find((t) => t.code === data.champion_code);
+        if (picked) {
+          setSelectedTeam(picked);
+          if (data.locked) setConfirmed(true);
+        }
+      })
+      .catch(() => {});
+  }, [teams]);
 
   // Check if tournament has started (June 11, 2026)
   const tournamentStarted = new Date() >= new Date("2026-06-11T17:00:00Z");
@@ -38,11 +52,26 @@ export default function ChampionPicker({ teams }: Props) {
     }, 300);
   }, []);
 
-  function handleConfirm() {
-    if (!selectedTeam) return;
-    setConfirmed(true);
-    showToast(`¡${selectedTeam.name} como campeón! +{championPoints} pts si acertás`);
-    fireChampionConfetti();
+  async function handleConfirm() {
+    if (!selectedTeam || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/champion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: selectedTeam.code }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        showToast(body.error || "No se pudo guardar tu campeón. Probá de nuevo.");
+        return;
+      }
+      setConfirmed(true);
+      showToast(`¡${selectedTeam.name} como campeón! +${championPoints} pts si acertás`);
+      fireChampionConfetti();
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (teams.length === 0) return null;
@@ -125,10 +154,11 @@ export default function ChampionPicker({ teams }: Props) {
                     </div>
                     <button
                       onClick={handleConfirm}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-gold text-bg rounded hover:brightness-110 transition-all"
+                      disabled={saving}
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-gold text-bg rounded hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
                       <Check size={14} weight="bold" />
-                      Confirmar campeón
+                      {saving ? "Guardando..." : "Confirmar campeón"}
                     </button>
                   </div>
                 )}

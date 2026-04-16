@@ -1,9 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
+import { revalidateTag } from "next/cache";
+import { getAdminClient } from "@/lib/supabase/admin";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getAdminClient();
 
 export async function calculateMatchScores(matchId: number) {
   // Get match result
@@ -87,4 +85,6 @@ export async function calculateMatchScores(matchId: number) {
   if (newScores.length > 0) {
     await supabase.from("scores").insert(newScores);
   }
+
+  revalidateTag("leaderboard", "max");
 }

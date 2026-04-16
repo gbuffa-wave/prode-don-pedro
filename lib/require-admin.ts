@@ -1,9 +1,37 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 type AdminResult = { error: NextResponse } | { userId: string };
+type UserResult = { error: NextResponse } | { userId: string };
+
+/**
+ * Verifies the caller is authenticated (any role).
+ * Returns { userId } on success, { error: NextResponse } on failure.
+ */
+export async function requireUser(): Promise<UserResult> {
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll() {},
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+
+  return { userId: user.id };
+}
 
 /**
  * Verifies the caller is an authenticated admin user.
@@ -33,12 +61,7 @@ export async function requireAdmin(): Promise<AdminResult> {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
-  const adminClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  const { data: profile } = await adminClient
+  const { data: profile } = await getAdminClient()
     .from("app_users")
     .select("role")
     .eq("id", user.id)

@@ -1,18 +1,44 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { calculateMatchScores } from "@/lib/scoring";
 import { requireCronOrAdmin } from "@/lib/require-admin";
+import { getAdminClient } from "@/lib/supabase/admin";
+import type { MatchStatus } from "@/lib/types";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getAdminClient();
 
 const FOOTBALL_API_URL =
   "https://api.football-data.org/v4/competitions/WC/matches";
 
-// Map football-data.org status to our status
-function mapStatus(apiStatus: string): string {
+type ApiMatch = {
+  status: string;
+  stage?: string;
+  homeTeam?: { tla?: string };
+  awayTeam?: { tla?: string };
+  score?: { fullTime?: { home: number | null; away: number | null } };
+  venue?: string;
+};
+
+type OurMatchRow = {
+  id: number;
+  home_team_id: number;
+  away_team_id: number;
+  status: MatchStatus;
+  home_score: number | null;
+  away_score: number | null;
+  match_date: string;
+  venue: string | null;
+  home_team: { code: string } | null;
+  away_team: { code: string } | null;
+};
+
+type MatchUpdate = {
+  status: MatchStatus;
+  home_score?: number;
+  away_score?: number;
+  venue?: string;
+};
+
+function mapStatus(apiStatus: string): MatchStatus {
   switch (apiStatus) {
     case "FINISHED":
       return "finished";
@@ -56,15 +82,15 @@ export async function GET(request: Request) {
       );
     }
 
-    const data = await response.json();
-    const apiMatches = data.matches || [];
+    const data: { matches?: ApiMatch[] } = await response.json();
+    const apiMatches = data.matches ?? [];
 
-    // Get our matches with team codes
     const { data: ourMatches } = await supabase
       .from("matches")
       .select(
         "id, home_team_id, away_team_id, status, home_score, away_score, match_date, venue, home_team:teams!home_team_id(code), away_team:teams!away_team_id(code)"
-      );
+      )
+      .returns<OurMatchRow[]>();
 
     if (!ourMatches) {
       return NextResponse.json(
@@ -85,16 +111,11 @@ export async function GET(request: Request) {
 
       if (!homeCode || !awayCode) continue;
 
-      // Find matching match in our DB
-      const ourMatch = ourMatches.find((m: any) => {
-        const ourHome = m.home_team?.code;
-        const ourAway = m.away_team?.code;
-        return ourHome === homeCode && ourAway === awayCode;
-      });
-
+      const ourMatch = ourMatches.find(
+        (m) => m.home_team?.code === homeCode && m.away_team?.code === awayCode
+      );
       if (!ourMatch) continue;
 
-      // Check if there's something to update
       const needsUpdate =
         ourMatch.status !== newStatus ||
         ourMatch.home_score !== homeScore ||
@@ -103,15 +124,13 @@ export async function GET(request: Request) {
 
       if (!needsUpdate) continue;
 
-      // Update match
-      const updateData: any = { status: newStatus };
+      const updateData: MatchUpdate = { status: newStatus };
       if (homeScore !== null) updateData.home_score = homeScore;
       if (awayScore !== null) updateData.away_score = awayScore;
       if (venue) updateData.venue = venue;
 
       await supabase.from("matches").update(updateData).eq("id", ourMatch.id);
 
-      // If match just finished, calculate scores
       if (newStatus === "finished" && ourMatch.status !== "finished") {
         await calculateMatchScores(ourMatch.id);
       }
@@ -119,66 +138,40 @@ export async function GET(request: Request) {
       updatedCount++;
     }
 
-    // Check if final is finished -> auto-set champion
-    const finalMatch = ourMatches.find((m: any) => {
-      return (
-        m.status === "finished" &&
-        apiMatches.some(
-          (am: any) =>
-            am.stage === "FINAL" &&
-            mapStatus(am.status) === "finished" &&
-            am.homeTeam?.tla === (m as any).home_team?.code
-        )
-      );
-    });
+    // Auto-set champion_code en app_config cuando la final está finished
+    const finalApiMatch = apiMatches.find(
+      (am) => am.stage === "FINAL" && mapStatus(am.status) === "finished"
+    );
+    if (finalApiMatch) {
+      const fHome = finalApiMatch.homeTeam?.tla;
+      const fAway = finalApiMatch.awayTeam?.tla;
+      const fHomeScore = finalApiMatch.score?.fullTime?.home ?? null;
+      const fAwayScore = finalApiMatch.score?.fullTime?.away ?? null;
 
-    if (finalMatch) {
-      const fHome = (finalMatch as any).home_team?.code;
-      const fAway = (finalMatch as any).away_team?.code;
+      let championCode: string | null = null;
+      if (fHomeScore !== null && fAwayScore !== null) {
+        if (fHomeScore > fAwayScore) championCode = fHome ?? null;
+        else if (fAwayScore > fHomeScore) championCode = fAway ?? null;
+      }
 
-      if (
-        finalMatch.home_score !== null &&
-        finalMatch.away_score !== null
-      ) {
-        let championCode: string | null = null;
-        if (finalMatch.home_score > finalMatch.away_score) {
-          championCode = fHome;
-        } else if (finalMatch.away_score > finalMatch.home_score) {
-          championCode = fAway;
-        }
+      if (championCode) {
+        const { data: existing } = await supabase
+          .from("app_config")
+          .select("value")
+          .eq("key", "champion_code")
+          .maybeSingle();
 
-        if (championCode) {
-          // Check if champion already set
-          const { data: existing } = await supabase
+        if (!existing) {
+          await supabase
             .from("app_config")
-            .select("value")
-            .eq("key", "champion")
-            .single();
-
-          if (!existing) {
-            // Get full team name
-            const { data: champTeam } = await supabase
-              .from("teams")
-              .select("name, code")
-              .eq("code", championCode)
-              .single();
-
-            if (champTeam) {
-              await supabase.from("app_config").upsert({
-                key: "champion",
-                value: JSON.stringify({
-                  name: champTeam.name,
-                  code: champTeam.code,
-                }),
-              });
-            }
-          }
+            .upsert({ key: "champion_code", value: championCode });
         }
       }
     }
 
     return NextResponse.json({ success: true, updated: updatedCount });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

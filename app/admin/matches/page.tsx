@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowsClockwise, Check, MagnifyingGlass } from "@phosphor-icons/react";
+import { useToast } from "@/components/Toast";
 
 interface Team {
   id: number;
@@ -26,6 +27,7 @@ interface AdminMatch {
 }
 
 export default function AdminMatchesPage() {
+  const { showToast } = useToast();
   const [matches, setMatches] = useState<AdminMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +112,7 @@ export default function AdminMatchesPage() {
       setSaved((prev) => ({ ...prev, [matchId]: true }));
       setTimeout(() => setSaved((prev) => ({ ...prev, [matchId]: false })), 2000);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al guardar el resultado");
+      showToast(err instanceof Error ? err.message : "Error al guardar el resultado");
     } finally {
       setSaving((prev) => ({ ...prev, [matchId]: false }));
     }

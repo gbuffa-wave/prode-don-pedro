@@ -33,7 +33,7 @@ export default function AdminReportsPage() {
               <Users size={24} className="text-gold" />
               <div>
                 <h3 className="font-grotesk font-semibold text-sm">Participacion</h3>
-                <p className="text-xs text-text-muted">Usuarios activos, pronosticos por partido, engagement</p>
+                <p className="text-xs text-text-muted">Usuarios activos, pronósticos por partido, engagement</p>
               </div>
             </div>
             <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-teal text-bg rounded hover:bg-teal-dim transition-colors">
@@ -48,7 +48,7 @@ export default function AdminReportsPage() {
             <div className="flex items-center gap-3">
               <Target size={24} className="text-success" />
               <div>
-                <h3 className="font-grotesk font-semibold text-sm">Pronosticos por partido</h3>
+                <h3 className="font-grotesk font-semibold text-sm">Pronósticos por partido</h3>
                 <p className="text-xs text-text-muted">Detalle de cada pronostico con puntaje obtenido</p>
               </div>
             </div>

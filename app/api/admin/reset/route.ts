@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { revalidateTag } from "next/cache";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/require-admin";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getAdminClient();
 
 export async function POST() {
   const auth = await requireAdmin();
@@ -24,5 +22,6 @@ export async function POST() {
   // Clear reminder log
   await supabase.from("app_config").delete().eq("key", "last_reminder_sent");
 
+  revalidateTag("leaderboard", "max");
   return NextResponse.json({ success: true });
 }

@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/require-admin";
+import { adminChampionBodySchema, parseBody } from "@/lib/schemas";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getAdminClient();
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -24,17 +22,20 @@ export async function PUT(request: Request) {
   const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
 
-  const { champion } = await request.json();
+  const parsed = await parseBody(request, adminChampionBodySchema);
+  if ("error" in parsed) return parsed.error;
+  const { champion } = parsed.data;
 
   if (champion) {
     await supabase
       .from("app_config")
       .upsert({ key: "champion", value: JSON.stringify(champion) });
-  } else {
     await supabase
       .from("app_config")
-      .delete()
-      .eq("key", "champion");
+      .upsert({ key: "champion_code", value: champion.code });
+  } else {
+    await supabase.from("app_config").delete().eq("key", "champion");
+    await supabase.from("app_config").delete().eq("key", "champion_code");
   }
 
   return NextResponse.json({ success: true });

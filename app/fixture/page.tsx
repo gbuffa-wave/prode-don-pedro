@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import MatchCard from "@/components/MatchCard";
 import Countdown from "@/components/Countdown";
 import ChampionPicker from "@/components/ChampionPicker";
@@ -104,7 +105,14 @@ export default function FixturePage() {
           <div className="w-full h-full bg-gradient-to-br from-teal/10 via-transparent to-teal/5" />
         </div>
 
-        <img src="/hero-banner.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <Image
+          src="/hero-banner.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
 
         {/* Dark overlay for text legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/60 to-transparent" />
@@ -117,7 +125,7 @@ export default function FixturePage() {
             Prode <span className="text-teal">2026</span>
           </h1>
           <p className="font-grotesk text-sm text-text-secondary max-w-md">
-            Pronostica los resultados de cada partido y competi con tus compañeros. ¿Quién sabe más de fútbol?
+            Pronosticá los resultados de cada partido y competí con tus compañeros. ¿Quién sabe más de fútbol?
           </p>
 
           {/* Countdown */}

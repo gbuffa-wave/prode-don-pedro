@@ -46,29 +46,33 @@ export default function PredictionForm({ matchId, existingHome, existingAway, di
     <div className={`flex items-center gap-2 ${shake ? "shake" : ""}`}>
       <input
         type="number"
+        inputMode="numeric"
         min={0}
         max={20}
         value={home}
         onChange={(e) => setHome(e.target.value)}
         disabled={disabled}
-        className="w-10 h-10 text-center font-sora font-bold text-lg bg-surface border border-border rounded focus:border-teal focus:outline-none disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        aria-label="Goles equipo local"
+        className="w-11 h-11 text-center font-sora font-bold text-lg bg-surface border border-border rounded focus:border-teal focus:outline-none disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         placeholder="-"
       />
-      <span className="text-text-muted text-xs">-</span>
+      <span className="text-text-muted text-xs" aria-hidden="true">-</span>
       <input
         type="number"
+        inputMode="numeric"
         min={0}
         max={20}
         value={away}
         onChange={(e) => setAway(e.target.value)}
         disabled={disabled}
-        className="w-10 h-10 text-center font-sora font-bold text-lg bg-surface border border-border rounded focus:border-teal focus:outline-none disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        aria-label="Goles equipo visitante"
+        className="w-11 h-11 text-center font-sora font-bold text-lg bg-surface border border-border rounded focus:border-teal focus:outline-none disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         placeholder="-"
       />
       {!disabled && (
         <button
           onClick={handleSubmit}
-          className="ml-1 px-3 py-2 text-xs font-semibold bg-teal text-bg rounded hover:bg-teal-dim transition-colors"
+          className="ml-1 px-3 min-h-11 text-xs font-semibold bg-teal text-bg rounded hover:bg-teal-dim transition-colors"
         >
           {hasExisting ? "Editar" : "OK"}
         </button>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -25,13 +25,7 @@ export async function GET() {
     return NextResponse.json({ user: null });
   }
 
-  // Use service role to bypass RLS
-  const adminSupabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  const { data: appUser } = await adminSupabase
+  const { data: appUser } = await getAdminClient()
     .from("app_users")
     .select("role, team, display_name, avatar_url")
     .eq("id", user.id)

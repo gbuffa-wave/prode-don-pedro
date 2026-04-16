@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { getAdminClient } from "@/lib/supabase/admin";
+import { onboardingBodySchema, parseBody } from "@/lib/schemas";
 
 export async function POST(request: Request) {
-  const { team } = await request.json();
-
-  if (!team) {
-    return NextResponse.json({ error: "Team is required" }, { status: 400 });
-  }
+  const parsed = await parseBody(request, onboardingBodySchema);
+  if ("error" in parsed) return parsed.error;
+  const { team } = parsed.data;
 
   // Get current user
   const cookieStore = await cookies();
@@ -32,13 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Update user's team using service role
-  const adminSupabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  await adminSupabase
+  await getAdminClient()
     .from("app_users")
     .update({ team })
     .eq("id", user.id);

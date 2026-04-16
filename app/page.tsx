@@ -20,7 +20,7 @@ export default function HomePage() {
         <span className="text-teal">2026</span>
       </h1>
       <p className="font-grotesk text-text-secondary text-center max-w-md mb-8">
-        Pronostica los resultados del Mundial y competi con tus companeros.
+        Pronosticá los resultados del Mundial y competí con tus compañeros.
       </p>
       <Countdown targetDate="2026-06-11T17:00:00Z" />
       <div className="mt-8">

@@ -1,17 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { calculateMatchScores } from "@/lib/scoring";
 import { requireAdmin } from "@/lib/require-admin";
+import { matchResultBodySchema, parseBody } from "@/lib/schemas";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getAdminClient();
 
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
 
-  const { matchId, homeScore, awayScore } = await request.json();
+  const parsed = await parseBody(request, matchResultBodySchema);
+  if ("error" in parsed) return parsed.error;
+  const { matchId, homeScore, awayScore } = parsed.data;
 
   const { error } = await supabase
     .from("matches")

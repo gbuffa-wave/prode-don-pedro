@@ -226,7 +226,7 @@ export default function DemoPage() {
                   Prode <span className="text-teal">2026</span>
                 </h1>
                 <p className="font-grotesk text-sm text-text-secondary max-w-md">
-                  Pronostica los resultados de cada partido y competi con tus companeros.
+                  Pronosticá los resultados de cada partido y competí con tus compañeros.
                 </p>
                 <div className="mt-6">
                   <p className="text-[10px] text-text-muted uppercase tracking-wider mb-2">Comienza en</p>
@@ -551,7 +551,7 @@ export default function DemoPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               {[
                 { label: "Usuarios", value: "47", icon: Users, color: "text-teal" },
-                { label: "Pronosticos", value: "1.240", icon: Target, color: "text-gold" },
+                { label: "Pronósticos", value: "1.240", icon: Target, color: "text-gold" },
                 { label: "Jugados", value: "12", icon: SoccerBall, color: "text-success" },
                 { label: "Pendientes", value: "60", icon: Trophy, color: "text-warning" },
               ].map((s) => (

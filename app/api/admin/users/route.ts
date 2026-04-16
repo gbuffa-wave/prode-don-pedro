@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/require-admin";
+import {
+  adminUpdateUserBodySchema,
+  adminDeleteUserBodySchema,
+  parseBody,
+} from "@/lib/schemas";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getAdminClient();
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -24,9 +26,11 @@ export async function PUT(request: Request) {
   const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
 
-  const { userId, team, role } = await request.json();
+  const parsed = await parseBody(request, adminUpdateUserBodySchema);
+  if ("error" in parsed) return parsed.error;
+  const { userId, team, role } = parsed.data;
 
-  const update: Record<string, string> = {};
+  const update: Record<string, string | null> = {};
   if (team !== undefined) update.team = team;
   if (role !== undefined) update.role = role;
 
@@ -43,9 +47,10 @@ export async function DELETE(request: Request) {
   const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
 
-  const { userId } = await request.json();
+  const parsed = await parseBody(request, adminDeleteUserBodySchema);
+  if ("error" in parsed) return parsed.error;
+  const { userId } = parsed.data;
 
-  // Delete user's scores, predictions, then the user
   await supabase.from("scores").delete().eq("user_id", userId);
   await supabase.from("predictions").delete().eq("user_id", userId);
   await supabase.from("app_users").delete().eq("id", userId);

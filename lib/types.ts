@@ -56,11 +56,13 @@ export interface LeaderboardEntry {
   user_id: string;
   display_name: string | null;
   avatar_url: string | null;
+  team: string | null;
   total_points: number;
   rank: number;
   correct_exact: number;
   correct_winner: number;
-  total_predictions: number;
+  matches_played: number;
+  champion_bonus: number;
 }
 
 export interface Prize {
@@ -82,5 +84,15 @@ export interface AppUser {
   role: UserRole;
   display_name: string | null;
   avatar_url: string | null;
+  team: string | null;
+  champion_code: string | null;
+  champion_locked_at: string | null;
   created_at: string;
+}
+
+export interface InternalTeam {
+  id: number;
+  name: string;
+  icon: string;
+  created_at?: string;
 }

@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/require-admin";
+import {
+  adminCreateTeamBodySchema,
+  adminUpdateTeamBodySchema,
+  adminDeleteTeamBodySchema,
+  parseBody,
+} from "@/lib/schemas";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabase = getAdminClient();
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -24,8 +27,9 @@ export async function POST(request: Request) {
   const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
 
-  const { name, icon } = await request.json();
-  if (!name) return NextResponse.json({ error: "Name required" }, { status: 400 });
+  const parsed = await parseBody(request, adminCreateTeamBodySchema);
+  if ("error" in parsed) return parsed.error;
+  const { name, icon } = parsed.data;
 
   const { error } = await supabase
     .from("internal_teams")
@@ -39,7 +43,9 @@ export async function PUT(request: Request) {
   const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
 
-  const { id, name, icon } = await request.json();
+  const parsed = await parseBody(request, adminUpdateTeamBodySchema);
+  if ("error" in parsed) return parsed.error;
+  const { id, name, icon } = parsed.data;
 
   const { error } = await supabase
     .from("internal_teams")
@@ -54,9 +60,10 @@ export async function DELETE(request: Request) {
   const auth = await requireAdmin();
   if ("error" in auth) return auth.error;
 
-  const { id } = await request.json();
+  const parsed = await parseBody(request, adminDeleteTeamBodySchema);
+  if ("error" in parsed) return parsed.error;
+  const { id } = parsed.data;
 
-  // Clear team from users who had this team
   const { data: team } = await supabase.from("internal_teams").select("name").eq("id", id).single();
   if (team) {
     await supabase.from("app_users").update({ team: null }).eq("team", team.name);

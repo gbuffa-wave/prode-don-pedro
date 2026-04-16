@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -15,25 +14,21 @@ const NAV_ITEMS = [
   { href: "/prizes", label: "Premios", icon: Medal },
 ];
 
-export default function Navbar() {
+type NavUser = { name: string | null; avatar: string | null; isAdmin: boolean };
+
+interface Props {
+  user: NavUser | null;
+}
+
+export default function Navbar({ user }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string | null; avatar: string | null; isAdmin: boolean }>({ name: null, avatar: null, isAdmin: false });
 
-  useEffect(() => {
-    fetch("/api/me")
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser({
-            name: data.user.name,
-            avatar: data.user.avatar,
-            isAdmin: data.user.role === "admin",
-          });
-        }
-      })
-      .catch(() => {});
-  }, []);
+  if (pathname.startsWith("/demo") || pathname === "/login" || pathname === "/onboarding" || pathname === "/") {
+    return null;
+  }
+
+  const u: NavUser = user ?? { name: null, avatar: null, isAdmin: false };
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -79,7 +74,7 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            {user.isAdmin && (
+            {u.isAdmin && (
               <Link
                 href="/admin"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
@@ -90,7 +85,7 @@ export default function Navbar() {
                 <span>Admin</span>
               </Link>
             )}
-            {user.avatar && <UserAvatar src={user.avatar} name={user.name} size={28} />}
+            {u.avatar && <UserAvatar src={u.avatar} name={u.name} size={28} />}
             <button
               onClick={handleSignOut}
               className="ml-2 p-2 text-text-muted hover:text-danger transition-colors"
@@ -124,8 +119,8 @@ export default function Navbar() {
             onClick={handleSignOut}
             className="flex items-center gap-1.5 text-text-muted"
           >
-            {user.avatar ? (
-              <UserAvatar src={user.avatar} name={user.name} size={22} />
+            {u.avatar ? (
+              <UserAvatar src={u.avatar} name={u.name} size={22} />
             ) : (
               <SignOut size={16} />
             )}
@@ -148,6 +143,17 @@ export default function Navbar() {
               </Link>
             );
           })}
+          {u.isAdmin && (
+            <Link
+              href="/admin"
+              className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
+                pathname.startsWith("/admin") ? "text-gold" : "text-text-muted"
+              }`}
+            >
+              <GearSix size={16} weight={pathname.startsWith("/admin") ? "fill" : "regular"} />
+              <span className="text-[10px] font-semibold">Admin</span>
+            </Link>
+          )}
         </div>
       </nav>
     </>
