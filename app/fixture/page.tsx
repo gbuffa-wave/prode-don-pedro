@@ -53,23 +53,63 @@ export default function FixturePage() {
   const [selectedGroup, setSelectedGroup] = useState("A");
 
   useEffect(() => {
-    async function fetchMatches() {
+    async function fetchData() {
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from("matches")
-        .select("*, home_team:teams!home_team_id(*), away_team:teams!away_team_id(*)")
-        .order("match_date");
+      const [matchesRes, predsRes] = await Promise.all([
+        supabase
+          .from("matches")
+          .select("*, home_team:teams!home_team_id(*), away_team:teams!away_team_id(*)")
+          .order("match_date"),
+        supabase
+          .from("predictions")
+          .select("match_id, home_score, away_score"),
+      ]);
 
-      if (!error && data) {
-        setMatches(data as MatchWithTeams[]);
+      if (!matchesRes.error && matchesRes.data) {
+        setMatches(matchesRes.data as MatchWithTeams[]);
+      }
+      if (predsRes.data) {
+        const byMatch: Record<number, { home_score: number; away_score: number }> = {};
+        for (const p of predsRes.data) {
+          byMatch[p.match_id] = { home_score: p.home_score, away_score: p.away_score };
+        }
+        setPredictions(byMatch);
       }
       setLoading(false);
     }
-    fetchMatches();
+    fetchData();
   }, []);
 
-  function handlePredict(matchId: number, homeScore: number, awayScore: number) {
-    setPredictions((prev) => ({ ...prev, [matchId]: { home_score: homeScore, away_score: awayScore } }));
+  async function handlePredict(matchId: number, homeScore: number, awayScore: number) {
+    const prev = predictions[matchId];
+    setPredictions((p) => ({ ...p, [matchId]: { home_score: homeScore, away_score: awayScore } }));
+
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("predictions")
+      .upsert(
+        {
+          user_id: user.id,
+          match_id: matchId,
+          home_score: homeScore,
+          away_score: awayScore,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,match_id" }
+      );
+
+    if (error) {
+      // Rollback visual si RLS o constraint rechazaron el upsert
+      setPredictions((p) => {
+        const next = { ...p };
+        if (prev) next[matchId] = prev;
+        else delete next[matchId];
+        return next;
+      });
+    }
   }
 
   const filtered = useMemo(() => {
