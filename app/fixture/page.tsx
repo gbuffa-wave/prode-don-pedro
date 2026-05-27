@@ -157,7 +157,7 @@ export default function FixturePage() {
         {/* Dark overlay for text legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/60 to-transparent" />
 
-        <div className="relative z-10 max-w-2xl mx-auto px-4 pt-8 pb-10 md:pt-12 md:pb-14">
+        <div className="relative z-10 max-w-2xl mx-auto px-4 pt-6 pb-10 md:pt-8 md:pb-14">
           <p className="font-grotesk font-semibold text-[10px] text-teal tracking-widest uppercase mb-3">
             Mundial 2026
           </p>

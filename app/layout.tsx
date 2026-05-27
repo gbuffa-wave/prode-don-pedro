@@ -38,7 +38,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="background-color" content="#0D1510" />
       </head>
-      <body className="font-grotesk antialiased min-h-dvh bg-bg text-text-primary">
+      {/* pt-[84px]: mobile navbar = h-11(44px) + h-10(40px) = 84px. md:pt-14: desktop navbar = h-14(56px) */}
+      <body className="font-grotesk antialiased min-h-dvh bg-bg text-text-primary pt-[84px] md:pt-14">
         <ToastProvider>
           <NavbarWrapper />
           <PageTransition>{children}</PageTransition>
