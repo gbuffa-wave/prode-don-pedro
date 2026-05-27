@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { brand } from "@/lib/brand";
 
 const ALLOWED_ORIGINS = [
-  "https://prode.wavebrands.com",
+  brand.domain,
   "http://localhost:3000",
 ];
 
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
   // Validate origin against allowlist to prevent open redirect
   const safeOrigin = ALLOWED_ORIGINS.includes(origin)
     ? origin
-    : "https://prode.wavebrands.com";
+    : brand.domain;
 
   if (code) {
     const cookieStore = await cookies();

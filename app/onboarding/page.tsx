@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import { brand } from "@/lib/brand";
 import { Check } from "@phosphor-icons/react";
 import confetti from "canvas-confetti";
 import UserAvatar from "@/components/UserAvatar";
@@ -80,8 +81,8 @@ export default function OnboardingPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <Image
-            src="/logo-wave.png"
-            alt="Wave Brands"
+            src={brand.logoSrc}
+            alt={brand.logoAlt}
             width={80}
             height={22}
             className="h-5 w-auto object-contain mx-auto mb-6"

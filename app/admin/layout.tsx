@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { brand } from "@/lib/brand";
 import { SoccerBall, Gear, Trophy, ChartBar, ArrowLeft, Crown, Users, EnvelopeSimple, ArrowCounterClockwise, ShieldStar } from "@phosphor-icons/react";
 
 const ADMIN_NAV = [
@@ -26,8 +27,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Image
-            src="/logo-wave.png"
-            alt="Wave Brands"
+            src={brand.logoSrc}
+            alt={brand.logoAlt}
             width={50}
             height={14}
             className="h-3 w-auto object-contain"
