@@ -390,19 +390,6 @@ INSERT INTO matches (id, home_team_id, away_team_id, stage, group_label, match_d
 INSERT INTO matches (id, home_team_id, away_team_id, stage, group_label, match_date, venue, status, home_score, away_score, tv_channel) VALUES (144, 88, 85, 'group', 'J', '2026-06-28T02:00:00+00:00', 'Mercedes-Benz Stadium, Atlanta', 'scheduled', NULL, NULL, 'Telefe · TV Pública · DSports · DirecTV Go') ON CONFLICT (id) DO UPDATE SET home_score=EXCLUDED.home_score, away_score=EXCLUDED.away_score, status=EXCLUDED.status, tv_channel=EXCLUDED.tv_channel, venue=EXCLUDED.venue;
 SELECT setval('matches_id_seq', 144);
 
--- App config
-INSERT INTO app_config (key, value) VALUES ('last_reminder_sent', '{"date":"2026-04-14T18:46:56.175Z","sent":3,"matches":4,"test":true}') ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value;
-
--- Internal teams (equipos del cliente)
-INSERT INTO internal_teams (name, icon) VALUES ('Contenidos', 'FilmSlate') ON CONFLICT (name) DO NOTHING;
-INSERT INTO internal_teams (name, icon) VALUES ('Comunicación', 'Megaphone') ON CONFLICT (name) DO NOTHING;
-INSERT INTO internal_teams (name, icon) VALUES ('Eventos', 'MicrophoneStage') ON CONFLICT (name) DO NOTHING;
-INSERT INTO internal_teams (name, icon) VALUES ('Bosque', 'Tree') ON CONFLICT (name) DO NOTHING;
-INSERT INTO internal_teams (name, icon) VALUES ('Luna', 'Moon') ON CONFLICT (name) DO NOTHING;
-INSERT INTO internal_teams (name, icon) VALUES ('Sol', 'Sun') ON CONFLICT (name) DO NOTHING;
-INSERT INTO internal_teams (name, icon) VALUES ('Faro', 'Lighthouse') ON CONFLICT (name) DO NOTHING;
-INSERT INTO internal_teams (name, icon) VALUES ('Dirección', 'Compass') ON CONFLICT (name) DO NOTHING;
-
 COMMIT;
 
 -- ============================================================
