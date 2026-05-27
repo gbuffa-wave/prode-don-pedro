@@ -11,12 +11,12 @@ interface Rule {
   color: string;
 }
 
+// Colores alineados al manual Don Pedro: rojo (#FF4122) = primario, lima (#DAFF3E) = acento especial
 const FALLBACK_RULES: Rule[] = [
-  { label: "Resultado exacto",              example: "Predecís 2-1 y sale 2-1",      points: 10, color: "text-gold" },
-  { label: "Ganador + diferencia de goles", example: "Predecís 3-1 y sale 2-0",      points: 5,  color: "text-teal" },
-  { label: "Solo ganador",                  example: "Predecís 1-0 y sale 3-2",      points: 3,  color: "text-text-primary" },
+  { label: "Resultado exacto",              example: "Predecís 2-1 y sale 2-1",      points: 10, color: "text-teal" },
+  { label: "Ganador + diferencia de goles", example: "Predecís 3-1 y sale 2-0",      points: 5,  color: "text-teal/70" },
+  { label: "Solo ganador",                  example: "Predecís 1-0 y sale 3-2",      points: 3,  color: "text-text-secondary" },
   { label: "Campeón del Mundial",           example: "Acertar quién gana el torneo", points: 50, color: "text-gold" },
-  { label: "Error",                         example: "Predecís 1-0 y sale 0-1",      points: 0,  color: "text-text-muted" },
 ];
 
 export default function ScoringInfo() {
@@ -29,18 +29,17 @@ export default function ScoringInfo() {
       if (!data || data.length === 0) return; // mantiene el fallback
       const mapped: Rule[] = [];
       for (const r of data) {
-        if (r.rule_type === "exact")           mapped.push({ label: "Resultado exacto",              example: "Predecís 2-1 y sale 2-1",      points: r.points, color: "text-gold" });
-        if (r.rule_type === "winner_and_diff") mapped.push({ label: "Ganador + diferencia de goles", example: "Predecís 3-1 y sale 2-0",      points: r.points, color: "text-teal" });
-        if (r.rule_type === "winner_only")     mapped.push({ label: "Solo ganador",                  example: "Predecís 1-0 y sale 3-2",      points: r.points, color: "text-text-primary" });
+        if (r.rule_type === "exact")           mapped.push({ label: "Resultado exacto",              example: "Predecís 2-1 y sale 2-1",      points: r.points, color: "text-teal" });
+        if (r.rule_type === "winner_and_diff") mapped.push({ label: "Ganador + diferencia de goles", example: "Predecís 3-1 y sale 2-0",      points: r.points, color: "text-teal/70" });
+        if (r.rule_type === "winner_only")     mapped.push({ label: "Solo ganador",                  example: "Predecís 1-0 y sale 3-2",      points: r.points, color: "text-text-secondary" });
         if (r.rule_type === "champion")        mapped.push({ label: "Campeón del Mundial",           example: "Acertar quién gana el torneo", points: r.points, color: "text-gold" });
       }
-      mapped.push({ label: "Error", example: "Predecís 1-0 y sale 0-1", points: 0, color: "text-text-muted" });
       setRules(mapped);
     });
   }, []);
 
   const championRule = rules.find(r => r.label === "Campeón del Mundial");
-  const matchRules = rules.filter(r => r.label !== "Campeón del Mundial");
+  const matchRules = rules.filter(r => r.label !== "Campeón del Mundial" && r.points > 0);
 
   return (
     <div className="mb-6">
@@ -81,7 +80,7 @@ export default function ScoringInfo() {
               </div>
             ))}
             {championRule && (
-              <div className="pt-2 border-t border-border">
+              <div className="pt-2 mt-1 border-t border-border">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-grotesk text-sm font-medium text-gold">{championRule.label}</p>
@@ -91,6 +90,9 @@ export default function ScoringInfo() {
                 </div>
               </div>
             )}
+            <p className="text-[10px] text-text-muted pt-2 border-t border-border/50 mt-1">
+              Sin puntos si el pronóstico es incorrecto.
+            </p>
           </div>
         )}
       </div>
