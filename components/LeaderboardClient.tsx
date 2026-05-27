@@ -17,18 +17,18 @@ interface Props {
 }
 
 export default function LeaderboardClient({ entries, internalTeams, currentUserId }: Props) {
-  const equipos = useMemo(() => ["Waveteam", ...internalTeams], [internalTeams]);
-  const [selectedEquipo, setSelectedEquipo] = useState("Waveteam");
+  const equipos = useMemo(() => ["Todos", ...internalTeams], [internalTeams]);
+  const [selectedEquipo, setSelectedEquipo] = useState("Todos");
 
   const filtered = useMemo(() => {
-    const list = selectedEquipo === "Waveteam"
+    const list = selectedEquipo === "Todos"
       ? entries
       : entries.filter((e) => e.equipo === selectedEquipo);
     return list.map((e, i) => ({ ...e, rank: i + 1 }));
   }, [selectedEquipo, entries]);
 
   useEffect(() => {
-    const colors = ["#0c5cac", "#D4A853", "#22C55E", "#F59E0B", "#EF4444", "#ffffff"];
+    const colors = ["#FF4122", "#DAFF3E", "#22C55E", "#F59E0B", "#ffffff", "#A8B8B0"];
     const defaults = { colors, ticks: 200, gravity: 0.8, scalar: 1.2, drift: 0 };
 
     confetti({ ...defaults, particleCount: 40, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } });
