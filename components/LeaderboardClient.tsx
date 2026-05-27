@@ -70,14 +70,14 @@ export default function LeaderboardClient({ entries, internalTeams, currentUserI
 
       <p className="text-xs text-text-muted mb-3">
         {filtered.length} jugador{filtered.length !== 1 ? "es" : ""}
-        {selectedEquipo !== "Waveteam" && ` en ${selectedEquipo}`}
+        {selectedEquipo !== "Todos" && ` en ${selectedEquipo}`}
       </p>
 
       {filtered.length === 0 ? (
         <div className="text-center py-12">
           <Trophy size={48} className="text-text-muted mx-auto mb-3" />
           <p className="text-text-muted text-sm">
-            {selectedEquipo !== "Waveteam"
+            {selectedEquipo !== "Todos"
               ? `No hay jugadores en ${selectedEquipo} todavía.`
               : "Todavía no hay jugadores. El ranking se actualiza con el primer partido."}
           </p>

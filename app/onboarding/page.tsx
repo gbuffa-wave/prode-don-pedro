@@ -60,7 +60,7 @@ export default function OnboardingPage() {
         particleCount: 100,
         spread: 80,
         origin: { y: 0.6 },
-        colors: ["#0c5cac", "#D4A853", "#22C55E", "#F59E0B", "#ffffff"],
+        colors: ["#FF4122", "#DAFF3E", "#22C55E", "#ffffff", "#A8B8B0"],
       });
       setTimeout(() => router.push("/fixture"), 800);
     } else {

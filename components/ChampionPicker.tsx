@@ -44,7 +44,7 @@ export default function ChampionPicker({ teams }: Props) {
   const tournamentStarted = new Date() >= new Date("2026-06-11T17:00:00Z");
 
   const fireChampionConfetti = useCallback(() => {
-    const colors = ["#D4A853", "#FFD700", "#0c5cac", "#ffffff"];
+    const colors = ["#FF4122", "#DAFF3E", "#ffffff", "#A8B8B0"];
     confetti({ particleCount: 60, spread: 70, origin: { x: 0.3, y: 0.6 }, colors, shapes: ["star"], scalar: 1.5 });
     confetti({ particleCount: 60, spread: 70, origin: { x: 0.7, y: 0.6 }, colors, shapes: ["star"], scalar: 1.5 });
     setTimeout(() => {

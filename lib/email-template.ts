@@ -51,9 +51,11 @@ const C = {
   textMuted:     "#50605B",
 };
 
-// URL pública donde vive el logo (Vercel alias estable)
-const LOGO_URL = "https://prode-don-pedro.vercel.app/logo-don-pedro.png";
-const APP_URL  = brand.domain;
+// URL pública donde vive el logo y app (Vercel alias estable)
+// Cuando el cliente tenga dominio propio, actualizar brand.domain en lib/brand.ts
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://prode-don-pedro.vercel.app";
+const LOGO_URL = `${BASE_URL}/logo-don-pedro.png`;
+const APP_URL  = BASE_URL;
 
 export function buildReminderEmail(userName: string, pendingMatches: PendingMatch[]): string {
   const safeUserName = escapeHtml(userName);

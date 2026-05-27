@@ -25,7 +25,7 @@ export default function PredictionForm({ matchId, existingHome, existingAway, di
       particleCount: 80,
       spread: 60,
       origin: { y: 0.7 },
-      colors: ["#0c5cac", "#D4A853", "#22C55E", "#F59E0B", "#EF4444", "#ffffff"],
+      colors: ["#FF4122", "#DAFF3E", "#22C55E", "#ffffff", "#A8B8B0"],
     });
   }, []);
 

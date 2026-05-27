@@ -29,7 +29,7 @@ export default function PrizesPage() {
   }, []);
 
   useEffect(() => {
-    const colors = ["#D4A853", "#B8922E", "#FFD700"];
+    const colors = ["#FF4122", "#DAFF3E", "#ffffff"];
     confetti({ particleCount: 40, spread: 80, origin: { x: 0.3, y: 0.3 }, colors, shapes: ["star"], scalar: 1.5, ticks: 150 });
     confetti({ particleCount: 40, spread: 80, origin: { x: 0.7, y: 0.3 }, colors, shapes: ["star"], scalar: 1.5, ticks: 150 });
   }, []);
