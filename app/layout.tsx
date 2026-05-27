@@ -39,10 +39,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="background-color" content="#0D1510" />
       </head>
       {/* pt-[84px]: mobile navbar = h-11(44px) + h-10(40px) = 84px. md:pt-14: desktop navbar = h-14(56px) */}
-      <body className="font-grotesk antialiased min-h-dvh bg-bg text-text-primary pt-[84px] md:pt-14">
+      <body className="font-grotesk antialiased min-h-dvh bg-bg text-text-primary">
         <ToastProvider>
           <NavbarWrapper />
-          <PageTransition>{children}</PageTransition>
+          {/* pt-[84px]: mobile navbar = h-11(44px) + h-10(40px). md:pt-14: desktop h-14(56px) */}
+          <div className="pt-[84px] md:pt-14">
+            <PageTransition>{children}</PageTransition>
+          </div>
         </ToastProvider>
       </body>
     </html>
