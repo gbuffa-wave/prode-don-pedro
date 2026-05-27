@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Trophy, SoccerBall, Medal, SignOut, Crown, GearSix } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
+import { brand } from "@/lib/brand";
 
 const NAV_ITEMS = [
   { href: "/fixture", label: "Fixture", icon: SoccerBall },
@@ -43,16 +44,16 @@ export default function Navbar({ user }: Props) {
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/fixture" className="flex items-center gap-3">
             <Image
-              src="/logo-wave.png"
-              alt="Wave Brands"
+              src={brand.logoSrc}
+              alt={brand.logoAlt}
               width={60}
               height={17}
               className="h-3.5 w-auto object-contain"
             />
             <div className="h-5 w-px bg-border" />
             <span className="font-sora font-bold text-lg tracking-tight">
-              <span className="text-text-primary">Prode</span>
-              <span className="text-teal ml-1">2026</span>
+              <span className="text-text-primary">{brand.title}</span>
+              <span className="text-teal ml-1">{brand.year}</span>
             </span>
           </Link>
 
@@ -103,16 +104,16 @@ export default function Navbar({ user }: Props) {
         <div className="flex items-center justify-between px-4 h-11">
           <Link href="/fixture" className="flex items-center gap-2">
             <Image
-              src="/logo-wave.png"
-              alt="Wave Brands"
+              src={brand.logoSrc}
+              alt={brand.logoAlt}
               width={45}
               height={13}
               className="h-2.5 w-auto object-contain"
             />
             <div className="h-3 w-px bg-border" />
             <span className="font-sora font-bold text-xs tracking-tight">
-              <span className="text-text-primary">Prode</span>
-              <span className="text-teal ml-1">2026</span>
+              <span className="text-text-primary">{brand.title}</span>
+              <span className="text-teal ml-1">{brand.year}</span>
             </span>
           </Link>
           <button
