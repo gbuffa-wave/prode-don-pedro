@@ -17,6 +17,7 @@ import ScoringInfo from "@/components/ScoringInfo";
 import UserAvatar from "@/components/UserAvatar";
 import { useToast } from "@/components/Toast";
 import type { Team } from "@/lib/types";
+import { brand } from "@/lib/brand";
 
 // ─── Mock data ───
 const DEMO_USER = { name: "Maria Garcia", avatar: null, team: "Comunicacion" };
@@ -657,7 +658,7 @@ export default function DemoPage() {
           Personalizamos la plataforma con tu marca y equipos internos.
         </p>
         <a
-          href="mailto:gbuffa@wavebrands.com?subject=Consulta%20Prode%20Mundial%202026"
+          href={`mailto:${brand.contactEmail}?subject=Consulta%20Prode%20Mundial%202026`}
           className="inline-block bg-teal text-bg font-semibold text-sm px-8 py-3 rounded hover:bg-teal-dim transition-colors"
         >
           Contactanos
