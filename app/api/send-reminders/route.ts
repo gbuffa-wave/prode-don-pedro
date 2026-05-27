@@ -3,6 +3,7 @@ import { buildReminderEmail } from "@/lib/email-template";
 import { requireAdmin } from "@/lib/require-admin";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { sendRemindersBodySchema, parseBody } from "@/lib/schemas";
+import { brand } from "@/lib/brand";
 
 const supabase = getAdminClient();
 const resend = new Resend(process.env.RESEND_API_KEY!);
@@ -135,7 +136,7 @@ export async function POST(request: Request) {
       await resend.emails.send({
         from: process.env.EMAIL_FROM || "Prode 2026 <onboarding@resend.dev>",
         to: email,
-        subject: `${prefix}⚽ ${pendingMatches.length} partido${plural} sin pronosticar — Prode 2026`,
+        subject: `${prefix}⚽ ${pendingMatches.length} partido${plural} sin pronosticar — ${brand.tournamentName}`,
         html,
       });
 
