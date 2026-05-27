@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
-import { Sora, Space_Grotesk } from "next/font/google";
+import { Raleway, Montserrat } from "next/font/google";
 import "./globals.css";
 import NavbarWrapper from "@/components/NavbarWrapper";
 import PageTransition from "@/components/PageTransition";
 import ToastProvider from "@/components/Toast";
+import { brand } from "@/lib/brand";
 
-const sora = Sora({
+// Raleway → titulares (reemplaza Sora)
+const raleway = Raleway({
   subsets: ["latin"],
   weight: ["400", "600", "700", "800"],
   variable: "--font-sora-next",
   display: "swap",
 });
 
-const grotesk = Space_Grotesk({
+// Montserrat → cuerpo y UI (reemplaza Space Grotesk)
+const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-grotesk-next",
@@ -20,20 +23,20 @@ const grotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Prode Mundial 2026 | Mercedes-Benz",
-  description: "Pronósticos del Mundial 2026",
+  title: `${brand.tournamentName} | ${brand.clientName}`,
+  description: brand.description,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${sora.variable} ${grotesk.variable}`}>
+    <html lang="es" className={`${raleway.variable} ${montserrat.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: dark)" />
-        <meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0D1510" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#0D1510" media="(prefers-color-scheme: light)" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="background-color" content="#0A0A0A" />
+        <meta name="background-color" content="#0D1510" />
       </head>
       <body className="font-grotesk antialiased min-h-dvh bg-bg text-text-primary">
         <ToastProvider>
